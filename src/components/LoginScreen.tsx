@@ -1,37 +1,44 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Logo from './Logo';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
+  const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
-  const emailRef = useRef<HTMLInputElement>(null);
 
-  const doLogin = async () => {
+  const doAction = async () => {
     if (!email || !password) {
       setMsg({ text: 'Preencha todos os campos.', type: 'error' });
       setShake(true);
       setTimeout(() => setShake(false), 400);
       return;
     }
+    if (password.length < 6) {
+      setMsg({ text: 'A senha deve ter pelo menos 6 caracteres.', type: 'error' });
+      return;
+    }
     setLoading(true);
     setMsg(null);
 
-    // Dev mode - accept any login
-    setTimeout(() => {
-      localStorage.setItem('vdj-session', JSON.stringify({ email }));
-      setMsg({ text: '✓ Modo desenvolvimento — acesso liberado.', type: 'success' });
-      setTimeout(() => {
-        setLoading(false);
-        window.location.reload();
-      }, 600);
-    }, 500);
+    const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
+
+    if (error) {
+      setMsg({ text: error, type: 'error' });
+      setShake(true);
+      setTimeout(() => setShake(false), 400);
+    } else {
+      setMsg({ text: isSignUp ? '✓ Conta criada com sucesso!' : '✓ Login realizado!', type: 'success' });
+    }
+    setLoading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') doLogin();
+    if (e.key === 'Enter') doAction();
   };
 
   return (
@@ -40,7 +47,7 @@ export default function LoginScreen() {
       minHeight: '100vh', padding: 20
     }}>
       <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
           <Logo size="lg" />
         </div>
         <div style={{
@@ -51,7 +58,6 @@ export default function LoginScreen() {
         </div>
 
         <input
-          ref={emailRef}
           type="email"
           placeholder="E-mail"
           value={email}
@@ -80,7 +86,7 @@ export default function LoginScreen() {
           }}
         />
         <button
-          onClick={doLogin}
+          onClick={doAction}
           disabled={loading}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
@@ -89,7 +95,18 @@ export default function LoginScreen() {
             transition: 'all .2s', letterSpacing: 1, opacity: loading ? 0.5 : 1
           }}
         >
-          {loading ? 'ENTRANDO...' : 'ENTRAR'}
+          {loading ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
+        </button>
+
+        <button
+          onClick={() => { setIsSignUp(!isSignUp); setMsg(null); }}
+          style={{
+            marginTop: 16, background: 'none', border: 'none', color: 'var(--text2)',
+            fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)',
+            textDecoration: 'underline', transition: 'color .2s'
+          }}
+        >
+          {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta'}
         </button>
 
         {msg && (

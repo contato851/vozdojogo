@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
 
 export default function TopBar() {
   const { liveState, startLive, savedIndicator } = useApp();
+  const { signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
@@ -16,9 +18,8 @@ export default function TopBar() {
     }
   };
 
-  const doLogout = () => {
-    localStorage.removeItem('vdj-session');
-    window.location.reload();
+  const doLogout = async () => {
+    await signOut();
   };
 
   return (
