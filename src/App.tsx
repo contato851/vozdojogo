@@ -1,27 +1,46 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { useState, useEffect } from 'react';
+import { AppProvider, useApp } from './context/AppContext';
+import TopBar from './components/TopBar';
+import LoginScreen from './components/LoginScreen';
+import SetupScreen from './components/SetupScreen';
+import NotesScreen from './components/NotesScreen';
+import LiveScreen from './components/LiveScreen';
 
-const queryClient = new QueryClient();
+function AppContent() {
+  const { screen } = useApp();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
+      <TopBar />
+      {screen === 'setup' && <SetupScreen />}
+      {screen === 'notes' && <NotesScreen />}
+      {screen === 'live' && <LiveScreen />}
+    </div>
+  );
+}
 
-export default App;
+function AppShell() {
+  const [loggedIn, setLoggedIn] = useState(() => {
+    try {
+      const s = localStorage.getItem('vdj-session');
+      if (s) { const p = JSON.parse(s); return !!(p && p.email); }
+    } catch (e) { /* */ }
+    return false;
+  });
+
+  if (!loggedIn) {
+    return (
+      <AppProvider>
+        <LoginScreen />
+      </AppProvider>
+    );
+  }
+
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+
+export default AppShell;
