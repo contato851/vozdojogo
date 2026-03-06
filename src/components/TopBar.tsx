@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import Logo from './Logo';
 
 export default function TopBar() {
   const { liveState, startLive, savedIndicator } = useApp();
@@ -26,18 +27,7 @@ export default function TopBar() {
       padding: '10px 0', marginBottom: 16, borderBottom: '1px solid var(--border)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{
-          fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700,
-          color: 'var(--green)', letterSpacing: 2
-        }}>
-          VOZ DO JOGO
-        </span>
-        <span style={{
-          fontSize: 9, color: 'var(--text3)', letterSpacing: 1,
-          background: 'var(--bg3)', padding: '2px 6px', borderRadius: 3
-        }}>
-          v1.0
-        </span>
+        <Logo size="md" />
       </div>
 
       <div style={{ display: 'flex', gap: 4 }}>

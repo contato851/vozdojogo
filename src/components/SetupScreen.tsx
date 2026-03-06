@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import Logo from './Logo';
 import { useApp } from '../context/AppContext';
 import { FORMATIONS, FORMATION_KEYS } from '../data/formations';
 import { loadLive } from '../data/store';
@@ -164,13 +165,7 @@ export default function SetupScreen() {
           padding: '48px 24px', marginBottom: 14, textAlign: 'center',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16
         }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', 
-            background: 'linear-gradient(135deg, var(--bg3), rgba(0,200,83,0.1))',
-            border: '2px dashed var(--border2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 40
-          }}>⚽</div>
+          <Logo size="lg" />
           <div>
             <h2 style={{
               fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
+import Logo from './Logo';
 
 export default function ViewerScreen() {
   const { shareCode } = useParams<{ shareCode: string }>();
@@ -78,16 +79,14 @@ export default function ViewerScreen() {
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{
-        textAlign: 'center', marginBottom: 16, padding: '8px 0',
-        borderBottom: '1px solid var(--border)'
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+        marginBottom: 16, padding: '8px 0', borderBottom: '1px solid var(--border)'
       }}>
-        <span style={{ fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--green)', letterSpacing: 2 }}>
-          VOZ DO JOGO
-        </span>
+        <Logo size="sm" />
         <span style={{
           fontSize: 9, letterSpacing: 1,
           background: 'rgba(255,61,61,0.15)', padding: '2px 8px', borderRadius: 3,
-          marginLeft: 8, border: '1px solid rgba(255,61,61,0.3)', color: 'var(--red)'
+          border: '1px solid rgba(255,61,61,0.3)', color: 'var(--red)'
         }}>
           ● AO VIVO
         </span>
