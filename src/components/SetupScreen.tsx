@@ -24,31 +24,58 @@ export default function SetupScreen() {
   const fileRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
 
   const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
     dragItem.current = { tk, type, idx };
   };
   const handleDragEnter = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
     dragOver.current = { tk, type, idx };
+    setDropTarget({ tk, type, idx });
   };
   const handleDragEnd = () => {
+    setDropTarget(null);
     const from = dragItem.current;
     const to = dragOver.current;
-    if (!from || !to || from.tk !== to.tk || from.type !== to.type || from.idx === to.idx) {
+    if (!from || !to || from.tk !== to.tk) {
+      dragItem.current = null;
+      dragOver.current = null;
+      return;
+    }
+    if (from.type === to.type && from.idx === to.idx) {
       dragItem.current = null;
       dragOver.current = null;
       return;
     }
     setMatch(m => {
       const team = { ...m[from.tk] };
-      const players = [...team[from.type]];
-      const [moved] = players.splice(from.idx, 1);
-      players.splice(to.idx, 0, moved);
-      team[from.type] = players;
+      if (from.type === to.type) {
+        // Reorder within same list
+        const players = [...team[from.type]];
+        const [moved] = players.splice(from.idx, 1);
+        players.splice(to.idx, 0, moved);
+        team[from.type] = players;
+      } else {
+        // Swap between starters and reserves
+        const fromList = [...team[from.type]];
+        const toList = [...team[to.type]];
+        const fromPlayer = fromList[from.idx];
+        const toPlayer = toList[to.idx];
+        fromList[from.idx] = toPlayer;
+        toList[to.idx] = fromPlayer;
+        team[from.type] = fromList;
+        team[to.type] = toList;
+      }
       return { ...m, [from.tk]: team };
     });
     dragItem.current = null;
     dragOver.current = null;
+  };
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+  const isDropTarget = (tk: string, type: string, idx: number) => {
+    return dropTarget?.tk === tk && dropTarget?.type === type && dropTarget?.idx === idx;
   };
 
   const updateField = (field: string, value: string) => {
@@ -309,9 +336,12 @@ export default function SetupScreen() {
                       onDragEnter={() => handleDragEnter(tk, 'starters', i)}
                       onDragEnd={handleDragEnd}
                       onDragOver={e => e.preventDefault()}
+                      onDragLeave={handleDragLeave}
                       style={{
                         display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
-                        padding: '3px 4px', borderRadius: 4, transition: 'background .15s'
+                        padding: '3px 4px', borderRadius: 4, transition: 'all .15s',
+                        border: isDropTarget(tk, 'starters', i) ? '2px solid var(--green)' : '2px solid transparent',
+                        background: isDropTarget(tk, 'starters', i) ? 'rgba(0,255,100,0.06)' : 'transparent'
                       }}
                     >
                       <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
@@ -353,9 +383,12 @@ export default function SetupScreen() {
                         onDragEnter={() => handleDragEnter(tk, 'reserves', i)}
                         onDragEnd={handleDragEnd}
                         onDragOver={e => e.preventDefault()}
+                        onDragLeave={handleDragLeave}
                         style={{
                           display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
-                          padding: '3px 4px', borderRadius: 4
+                          padding: '3px 4px', borderRadius: 4,
+                          border: isDropTarget(tk, 'reserves', i) ? '2px solid var(--green)' : '2px solid transparent',
+                          background: isDropTarget(tk, 'reserves', i) ? 'rgba(0,255,100,0.06)' : 'transparent'
                         }}
                       >
                         <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
