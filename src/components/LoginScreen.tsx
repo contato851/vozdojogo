@@ -91,7 +91,7 @@ export default function LoginScreen() {
         />
         <button
           onClick={doAction}
-          disabled={loading}
+          disabled={submitting}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
             color: 'var(--bg)', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
