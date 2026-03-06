@@ -95,8 +95,8 @@ export default function LoginScreen() {
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
             color: 'var(--bg)', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
-            border: 'none', borderRadius: 'var(--radius)', cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all .2s', letterSpacing: 1, opacity: loading ? 0.5 : 1
+            border: 'none', borderRadius: 'var(--radius)', cursor: submitting ? 'not-allowed' : 'pointer',
+            transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
           {loading ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
