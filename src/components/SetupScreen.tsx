@@ -22,14 +22,14 @@ export default function SetupScreen() {
   const [fetchingSquad, setFetchingSquad] = useState<'teamA' | 'teamB' | null>(null);
   const [squadError, setSquadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
-  const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
+  const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
+  const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
 
-  const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
+  const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number) => {
     dragItem.current = { tk, type, idx };
   };
-  const handleDragEnter = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
+  const handleDragEnter = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number) => {
     dragOver.current = { tk, type, idx };
     setDropTarget({ tk, type, idx });
   };
@@ -84,7 +84,7 @@ export default function SetupScreen() {
   const updateTeam = (tk: 'teamA' | 'teamB', field: string, value: string) => {
     setMatch(m => ({ ...m, [tk]: { ...m[tk], [field]: value } }));
   };
-  const updatePlayer = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number, field: string, value: string) => {
+  const updatePlayer = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number, field: string, value: string) => {
     setMatch(m => {
       const team = { ...m[tk] };
       const players = [...team[type]];
@@ -104,6 +104,20 @@ export default function SetupScreen() {
     setMatch(m => {
       const team = { ...m[tk] };
       team.reserves = team.reserves.filter((_, i) => i !== idx);
+      return { ...m, [tk]: team };
+    });
+  };
+  const addUnlisted = (tk: 'teamA' | 'teamB') => {
+    setMatch(m => {
+      const team = { ...m[tk] };
+      team.unlisted = [...(team.unlisted || []), { id: `u-${Date.now()}`, number: '', name: '' }];
+      return { ...m, [tk]: team };
+    });
+  };
+  const removeUnlisted = (tk: 'teamA' | 'teamB', idx: number) => {
+    setMatch(m => {
+      const team = { ...m[tk] };
+      team.unlisted = (team.unlisted || []).filter((_, i) => i !== idx);
       return { ...m, [tk]: team };
     });
   };
@@ -409,6 +423,57 @@ export default function SetupScreen() {
                           style={{ flex: 1, padding: '6px 10px', fontSize: 11 }}
                         />
                         <button onClick={() => removeReserve(tk, i)} style={{
+                          background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
+                          fontSize: 13, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
+                        }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Não Relacionados */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 0 4px' }}>
+                    <Label>Não Relacionados ({(team.unlisted || []).length})</Label>
+                    <button onClick={() => addUnlisted(tk)} style={{
+                      background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
+                      fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontFamily: 'var(--font-body)'
+                    }}>+ Não Relacionado</button>
+                  </div>
+                  <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                    {(team.unlisted || []).map((p, i) => (
+                      <div
+                        key={p.id}
+                        draggable
+                        onDragStart={() => handleDragStart(tk, 'unlisted', i)}
+                        onDragEnter={() => handleDragEnter(tk, 'unlisted', i)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={e => e.preventDefault()}
+                        onDragLeave={handleDragLeave}
+                        style={{
+                          display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
+                          padding: '3px 4px', borderRadius: 4,
+                          border: isDropTarget(tk, 'unlisted', i) ? '2px solid var(--green)' : '2px solid transparent',
+                          background: isDropTarget(tk, 'unlisted', i) ? 'rgba(0,255,100,0.06)' : 'transparent'
+                        }}
+                      >
+                        <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
+                        <Input
+                          value={p.number}
+                          onChange={v => updatePlayer(tk, 'unlisted', i, 'number', v)}
+                          style={{
+                            width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
+                            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 13,
+                            background: 'var(--bg3)', color: 'var(--text3)', borderRadius: 6, border: 'none',
+                            opacity: 0.6
+                          }}
+                        />
+                        <Input
+                          value={p.name}
+                          onChange={v => updatePlayer(tk, 'unlisted', i, 'name', v)}
+                          onBlur={v => updatePlayer(tk, 'unlisted', i, 'name', v.toUpperCase())}
+                          placeholder={`Não relacionado ${i + 1}`}
+                          style={{ flex: 1, padding: '6px 10px', fontSize: 11, opacity: 0.7 }}
+                        />
+                        <button onClick={() => removeUnlisted(tk, i)} style={{
                           background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
                           fontSize: 13, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
                         }}>×</button>

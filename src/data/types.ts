@@ -16,6 +16,7 @@ export interface Team {
   formation: string;
   starters: Player[];
   reserves: Player[];
+  unlisted: Player[];
   curiosities: string;
 }
 
