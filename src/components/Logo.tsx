@@ -4,7 +4,7 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const heights = { sm: 80, md: 120, lg: 240 };
+const heights = { sm: 160, md: 240, lg: 480 };
 
 export default function Logo({ size = 'md' }: LogoProps) {
   return (
