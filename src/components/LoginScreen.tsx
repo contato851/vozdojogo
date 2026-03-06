@@ -38,7 +38,7 @@ export default function LoginScreen() {
     } else {
       setMsg({ text: isSignUp ? '✓ Conta criada com sucesso!' : '✓ Login realizado!', type: 'success' });
     }
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
