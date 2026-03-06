@@ -694,13 +694,15 @@ function TacticalField({ ls, setLiveState, match }: { ls: LiveState; setLiveStat
             background: team.color, color: team.accent, transition: 'transform .2s',
             lineHeight: 1
           }}>
-            {p.number}
+            {p.number || (i + 1)}
           </div>
           <div style={{
-            fontSize: 11, fontWeight: 700, color: '#fff',
+            fontSize: 10, fontWeight: 700, color: '#fff',
             textShadow: '0 1px 4px rgba(0,0,0,0.8)', marginTop: 2,
-            whiteSpace: 'nowrap', letterSpacing: 0.5, maxWidth: 80,
-            overflow: 'hidden', textOverflow: 'ellipsis'
+            letterSpacing: 0.3, maxWidth: 70, lineHeight: 1.2,
+            textAlign: 'center', wordBreak: 'break-word',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
           }}>
             {p.name}
           </div>
