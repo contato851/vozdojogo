@@ -338,13 +338,13 @@ export default function SetupScreen() {
                       onDragOver={e => e.preventDefault()}
                       onDragLeave={handleDragLeave}
                       style={{
-                        display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
+                        display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
                         padding: '3px 4px', borderRadius: 4, transition: 'all .15s',
                         border: isDropTarget(tk, 'starters', i) ? '2px solid var(--green)' : '2px solid transparent',
                         background: isDropTarget(tk, 'starters', i) ? 'rgba(0,255,100,0.06)' : 'transparent'
                       }}
                     >
-                      <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
+                      <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
                       <Input
                         value={p.number}
                         onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
@@ -385,13 +385,13 @@ export default function SetupScreen() {
                         onDragOver={e => e.preventDefault()}
                         onDragLeave={handleDragLeave}
                         style={{
-                          display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
+                          display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
                           padding: '3px 4px', borderRadius: 4,
                           border: isDropTarget(tk, 'reserves', i) ? '2px solid var(--green)' : '2px solid transparent',
                           background: isDropTarget(tk, 'reserves', i) ? 'rgba(0,255,100,0.06)' : 'transparent'
                         }}
                       >
-                        <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
+                        <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
                         <Input
                           value={p.number}
                           onChange={v => updatePlayer(tk, 'reserves', i, 'number', v)}
