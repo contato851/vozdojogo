@@ -99,7 +99,7 @@ export default function LoginScreen() {
             transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
-          {loading ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
+          {submitting ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
         </button>
 
         <button
