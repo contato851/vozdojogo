@@ -46,24 +46,18 @@ export default function SetupScreen() {
     });
   };
 
-  const selectTeam = (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string }) => {
+  const selectTeam = async (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string }) => {
     setMatch(m => ({
       ...m,
       [tk]: { ...m[tk], name: team.name, color: team.color, accent: team.accent }
     }));
     setPickerTeam(null);
-  };
 
-  const handleFetchSquad = async (tk: 'teamA' | 'teamB') => {
-    const teamName = match[tk].name;
-    if (!teamName) {
-      setSquadError('Selecione um time primeiro');
-      return;
-    }
+    // Auto-fetch squad
     setFetchingSquad(tk);
     setSquadError(null);
     try {
-      const result = await fetchSquad(teamName);
+      const result = await fetchSquad(team.name);
       setMatch(m => ({
         ...m,
         [tk]: {
@@ -74,7 +68,7 @@ export default function SetupScreen() {
         }
       }));
     } catch (err: any) {
-      setSquadError(err.message || 'Erro ao buscar elenco');
+      setSquadError(`${team.name}: ${err.message || 'Erro ao buscar elenco'}`);
     } finally {
       setFetchingSquad(null);
     }
@@ -150,17 +144,9 @@ export default function SetupScreen() {
         {(['teamA', 'teamB'] as const).map(tk => (
           <div key={tk} style={{ flex: 1, minWidth: 0 }}>
             <Card>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-                <button onClick={() => setPickerTeam(tk)} className="btn-ghost" style={{ flex: 1, padding: 10, fontSize: 12 }}>
-                  ⚽ Selecionar Time
-                </button>
-                <button
-                  onClick={() => handleFetchSquad(tk)}
-                  disabled={fetchingSquad === tk}
-                  className="btn-ghost"
-                  style={{ padding: '10px 14px', fontSize: 11, opacity: fetchingSquad === tk ? 0.6 : 1 }}
-                >
-                  {fetchingSquad === tk ? '⏳ Buscando...' : '📋 Buscar Elenco'}
+              <div style={{ marginBottom: 12 }}>
+                <button onClick={() => setPickerTeam(tk)} className="btn-ghost" style={{ width: '100%', padding: 10, fontSize: 12 }}>
+                  {fetchingSquad === tk ? '⏳ Buscando elenco...' : '⚽ Selecionar Time'}
                 </button>
               </div>
 
