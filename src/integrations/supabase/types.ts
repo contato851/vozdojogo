@@ -44,6 +44,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          frequency: string | null
+          full_name: string
+          id: string
+          level: string | null
+          main_difficulty: string | null
+          narration_type: string[] | null
+          onboarding_completed: boolean | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          frequency?: string | null
+          full_name?: string
+          id?: string
+          level?: string | null
+          main_difficulty?: string | null
+          narration_type?: string[] | null
+          onboarding_completed?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          frequency?: string | null
+          full_name?: string
+          id?: string
+          level?: string | null
+          main_difficulty?: string | null
+          narration_type?: string[] | null
+          onboarding_completed?: boolean | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
