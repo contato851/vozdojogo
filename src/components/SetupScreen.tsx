@@ -2,11 +2,16 @@ import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { FORMATIONS, FORMATION_KEYS } from '../data/formations';
 import { loadLive } from '../data/store';
+import { getApiKey, setApiKey, fetchSquad } from '../data/apiFootball';
 import TeamPicker from './TeamPicker';
 
 export default function SetupScreen() {
   const { match, setMatch, liveState, startLive, resetLive, newMatch, exportMatch, importMatch } = useApp();
   const [pickerTeam, setPickerTeam] = useState<'teamA' | 'teamB' | null>(null);
+  const [showApiConfig, setShowApiConfig] = useState(false);
+  const [apiKey, setApiKeyState] = useState(getApiKey());
+  const [fetchingSquad, setFetchingSquad] = useState<'teamA' | 'teamB' | null>(null);
+  const [squadError, setSquadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const updateField = (field: string, value: string) => {
@@ -51,6 +56,37 @@ export default function SetupScreen() {
     setPickerTeam(null);
   };
 
+  const handleFetchSquad = async (tk: 'teamA' | 'teamB') => {
+    const teamName = match[tk].name;
+    if (!teamName) {
+      setSquadError('Selecione um time primeiro');
+      return;
+    }
+    if (!getApiKey()) {
+      setSquadError('Configure sua chave da API-Football primeiro');
+      setShowApiConfig(true);
+      return;
+    }
+    setFetchingSquad(tk);
+    setSquadError(null);
+    try {
+      const result = await fetchSquad(teamName);
+      setMatch(m => ({
+        ...m,
+        [tk]: {
+          ...m[tk],
+          starters: result.starters,
+          reserves: result.reserves,
+          ...(result.coach ? { coach: result.coach } : {})
+        }
+      }));
+    } catch (err: any) {
+      setSquadError(err.message || 'Erro ao buscar elenco');
+    } finally {
+      setFetchingSquad(null);
+    }
+  };
+
   const hasLive = liveState && loadLive()?.matchId === match.id;
 
   const infoFields: [string, string][] = [
@@ -71,7 +107,51 @@ export default function SetupScreen() {
         <button onClick={() => fileRef.current?.click()} className="btn-ghost">📂 Importar Partida</button>
         <button onClick={exportMatch} className="btn-ghost">💾 Exportar</button>
         <button onClick={newMatch} className="btn-ghost">🆕 Nova Partida</button>
+        <button onClick={() => setShowApiConfig(!showApiConfig)} className="btn-ghost" style={{ fontSize: 11 }}>
+          ⚙️ API-Football {apiKey ? '✓' : ''}
+        </button>
       </div>
+
+      {/* API Key Config */}
+      {showApiConfig && (
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          padding: 16, marginBottom: 14, animation: 'fadeUp .2s'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>Chave API-Football</span>
+            <a href="https://dashboard.api-football.com" target="_blank" rel="noopener"
+              style={{ fontSize: 10, color: 'var(--green)', textDecoration: 'underline' }}>
+              Obter chave gratuita →
+            </a>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input
+              value={apiKey}
+              onChange={v => setApiKeyState(v)}
+              placeholder="Cole sua API key aqui..."
+              style={{ flex: 1, fontSize: 11, fontFamily: 'monospace' }}
+            />
+            <button onClick={() => { setApiKey(apiKey); setShowApiConfig(false); }} className="btn-green" style={{ padding: '6px 16px', fontSize: 11 }}>
+              Salvar
+            </button>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>
+            100 requisições/dia gratuitas. A chave fica salva no navegador.
+          </div>
+        </div>
+      )}
+
+      {/* Squad error */}
+      {squadError && (
+        <div style={{
+          background: 'rgba(255,61,61,0.1)', border: '1px solid rgba(255,61,61,0.3)',
+          borderRadius: 'var(--radius)', padding: '8px 14px', marginBottom: 14,
+          fontSize: 12, color: 'var(--red)', textAlign: 'center'
+        }}>
+          {squadError}
+        </div>
+      )}
 
       {/* Match info */}
       <Card title="Informações da Partida">
@@ -110,9 +190,17 @@ export default function SetupScreen() {
         {(['teamA', 'teamB'] as const).map(tk => (
           <div key={tk} style={{ flex: 1, minWidth: 0 }}>
             <Card>
-              <div style={{ marginBottom: 12 }}>
-                <button onClick={() => setPickerTeam(tk)} className="btn-ghost" style={{ width: '100%', padding: 10, fontSize: 12 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                <button onClick={() => setPickerTeam(tk)} className="btn-ghost" style={{ flex: 1, padding: 10, fontSize: 12 }}>
                   ⚽ Selecionar Time
+                </button>
+                <button
+                  onClick={() => handleFetchSquad(tk)}
+                  disabled={fetchingSquad === tk}
+                  className="btn-ghost"
+                  style={{ padding: '10px 14px', fontSize: 11, opacity: fetchingSquad === tk ? 0.6 : 1 }}
+                >
+                  {fetchingSquad === tk ? '⏳ Buscando...' : '📋 Buscar Elenco'}
                 </button>
               </div>
 
