@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TEAMS_DB, SELECOES } from '../data/teams';
 import { TeamDBEntry } from '../data/types';
+import { prefetchLogos } from '../hooks/useTeamLogo';
+import TeamLogo from './TeamLogo';
 
 interface TeamPickerProps {
   onSelect: (team: { name: string; color: string; accent: string }) => void;
@@ -21,6 +23,13 @@ export default function TeamPicker({ onSelect, onClose }: TeamPickerProps) {
   } else {
     states.forEach(k => teams.push(...TEAMS_DB[k].teams));
   }
+
+  const isNationalTeam = mode === 'selecao';
+
+  // Prefetch logos for visible teams
+  useEffect(() => {
+    prefetchLogos(teams.map(t => t.name), isNationalTeam);
+  }, [teams.length, isNationalTeam]);
 
   return (
     <div
@@ -108,15 +117,7 @@ export default function TeamPicker({ onSelect, onClose }: TeamPickerProps) {
                 e.currentTarget.style.borderColor = 'transparent';
               }}
             >
-              <div style={{
-                width: 48, height: 48, borderRadius: '50%', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontWeight: 800,
-                fontSize: 14, fontFamily: 'var(--font-head)', letterSpacing: 1,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)', border: '2px solid rgba(255,255,255,0.15)',
-                background: t.color, color: t.accent, transition: 'transform .15s'
-              }}>
-                {t.s}
-              </div>
+              <TeamLogo team={t} isNationalTeam={isNationalTeam} size={48} />
               <div style={{
                 fontSize: 9, fontWeight: 600, color: 'var(--text2)', textAlign: 'center',
                 lineHeight: 1.2, maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis',
