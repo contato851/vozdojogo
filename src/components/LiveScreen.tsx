@@ -199,66 +199,57 @@ export default function LiveScreen() {
     <div style={{ animation: 'fadeUp .3s ease-out' }}>
       {/* Header with scoreboard */}
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px', marginBottom: 12 }}>
-        {/* Score row: Logo+Score | x | Score+Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-          {/* Team A */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+        {/* Main row: TeamA | Clock | TeamB */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Team A: logo + score + goals */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <LiveTeamLogo teamName={tA.name} size={80} />
             <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{goalsA}</span>
+            {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
+              <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6, textAlign: 'center' }}>
+                ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+              </div>
+            ))}
           </div>
-          <span style={{ color: 'var(--text3)', fontSize: 28, margin: '0 10px', fontWeight: 600 }}>×</span>
-          {/* Team B */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 10 }}>
-            <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{goalsB}</span>
+
+          {/* Clock center */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 600, letterSpacing: 4, minWidth: 90, textAlign: 'center', color: clk.running ? 'var(--green)' : 'var(--text2)' }}>
+                {clockDisplay}
+              </span>
+              <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
+                <button onClick={toggleClock} style={{
+                  fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap',
+                  border: `1px solid ${clk.running ? 'rgba(255,215,64,0.3)' : 'var(--green)'}`,
+                  background: clk.running ? 'rgba(255,215,64,0.15)' : 'var(--green)',
+                  color: clk.running ? 'var(--gold)' : 'var(--bg)',
+                  transition: 'all .2s'
+                }}>
+                  {clk.running ? '⏸ PAUSAR' : '▶ INICIAR'}
+                </button>
+                <button onClick={resetClock} style={{
+                  fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontWeight: 700, border: '1px solid var(--border)',
+                  background: 'var(--bg3)', color: 'var(--text2)', transition: 'all .2s',
+                  letterSpacing: 0.5, whiteSpace: 'nowrap'
+                }}>
+                  ↺ ZERAR
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Team B: logo + score + goals */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <LiveTeamLogo teamName={tB.name} size={80} />
-          </div>
-        </div>
-
-        {/* Goals log */}
-        {goalLog.length > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-            <div style={{ flex: 1, textAlign: 'right', paddingRight: 20 }}>
-              {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
-                <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ flexShrink: 0, width: 60 }} />
-            <div style={{ flex: 1, textAlign: 'left', paddingLeft: 20 }}>
-              {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
-                <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Clock */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, margin: '4px 0 2px', padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, width: 'fit-content', marginLeft: 'auto', marginRight: 'auto' }}>
-          <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 600, letterSpacing: 4, minWidth: 90, textAlign: 'center', color: clk.running ? 'var(--green)' : 'var(--text2)' }}>
-            {clockDisplay}
-          </span>
-          <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
-            <button onClick={toggleClock} style={{
-              fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap',
-              border: `1px solid ${clk.running ? 'rgba(255,215,64,0.3)' : 'var(--green)'}`,
-              background: clk.running ? 'rgba(255,215,64,0.15)' : 'var(--green)',
-              color: clk.running ? 'var(--gold)' : 'var(--bg)',
-              transition: 'all .2s'
-            }}>
-              {clk.running ? '⏸ PAUSAR' : '▶ INICIAR'}
-            </button>
-            <button onClick={resetClock} style={{
-              fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontWeight: 700, border: '1px solid var(--border)',
-              background: 'var(--bg3)', color: 'var(--text2)', transition: 'all .2s',
-              letterSpacing: 0.5, whiteSpace: 'nowrap'
-            }}>
-              ↺ ZERAR
-            </button>
+            <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{goalsB}</span>
+            {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
+              <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6, textAlign: 'center' }}>
+                ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+              </div>
+            ))}
           </div>
         </div>
         {/* Share button */}
