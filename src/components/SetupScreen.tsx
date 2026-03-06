@@ -621,17 +621,20 @@ function Input({ value, onChange, onBlur, placeholder, style }: {
   value: string; onChange: (v: string) => void; onBlur?: (v: string) => void;
   placeholder?: string; style?: React.CSSProperties
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <input
       type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
-      onBlur={e => onBlur?.(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={e => { setFocused(false); onBlur?.(e.target.value); }}
       placeholder={placeholder}
       style={{
         background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
         padding: '8px 12px', color: 'var(--text)', fontSize: 13, width: '100%',
         outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color .2s',
+        cursor: focused ? 'text' : 'pointer',
         ...style
       }}
     />
