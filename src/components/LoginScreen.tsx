@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
-  const { signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to="/escalacao" replace />;
 
   const doAction = async () => {
     if (!email || !password) {
@@ -22,7 +26,7 @@ export default function LoginScreen() {
       setMsg({ text: 'A senha deve ter pelo menos 6 caracteres.', type: 'error' });
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     setMsg(null);
 
     const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
@@ -34,7 +38,7 @@ export default function LoginScreen() {
     } else {
       setMsg({ text: isSignUp ? '✓ Conta criada com sucesso!' : '✓ Login realizado!', type: 'success' });
     }
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -87,15 +91,15 @@ export default function LoginScreen() {
         />
         <button
           onClick={doAction}
-          disabled={loading}
+          disabled={submitting}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
             color: 'var(--bg)', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
-            border: 'none', borderRadius: 'var(--radius)', cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all .2s', letterSpacing: 1, opacity: loading ? 0.5 : 1
+            border: 'none', borderRadius: 'var(--radius)', cursor: submitting ? 'not-allowed' : 'pointer',
+            transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
-          {loading ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
+          {submitting ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
         </button>
 
         <button
