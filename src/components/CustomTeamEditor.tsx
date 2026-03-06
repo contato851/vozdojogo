@@ -108,18 +108,30 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
         </div>
       </div>
 
-      {/* Logo URL */}
+      {/* Logo Upload */}
       <div>
-        <label style={labelStyle}>URL do Logo (opcional)</label>
-        <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)}
-          placeholder="https://exemplo.com/logo.png" style={inputStyle} />
-        {logoUrl && (
-          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src={logoUrl} alt="Preview" onError={e => (e.currentTarget.style.display = 'none')}
-              style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 4 }} />
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>Preview</span>
-          </div>
-        )}
+        <label style={labelStyle}>Logo do Time (opcional)</label>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload}
+          style={{ display: 'none' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {logoUrl && (
+            <img src={logoUrl} alt="Logo" onError={e => (e.currentTarget.style.display = 'none')}
+              style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 6, border: '1px solid var(--border)' }} />
+          )}
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading} style={{
+            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
+            color: 'var(--text2)', fontSize: 12, fontWeight: 600, padding: '8px 16px',
+            cursor: uploading ? 'wait' : 'pointer', fontFamily: 'var(--font-body)'
+          }}>
+            {uploading ? 'Enviando...' : logoUrl ? 'Trocar Logo' : 'Carregar Logo'}
+          </button>
+          {logoUrl && (
+            <button onClick={() => setLogoUrl('')} style={{
+              background: 'none', border: 'none', color: 'var(--red)', fontSize: 12,
+              cursor: 'pointer', opacity: 0.7
+            }}>Remover</button>
+          )}
+        </div>
       </div>
 
       {/* Players */}
