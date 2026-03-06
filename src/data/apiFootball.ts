@@ -34,32 +34,34 @@ async function apiFetch(endpoint: string, params: Record<string, string>) {
   return data;
 }
 
+// Remove accents from string for API compatibility
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Search for a team by name and return its API-Football ID
 async function findTeamId(teamName: string): Promise<number> {
   const cache = getTeamIdCache();
   if (cache[teamName]) return cache[teamName];
 
-  // Clean the name for search
-  const searchName = teamName
-    .replace(/-[A-Z]{2}$/, '') // Remove state suffix like -SP, -RJ
-    .replace(/^ATLÉTICO$/, 'Atletico')
+  // Clean the name for search: remove accents, state suffixes, keep only alphanumeric + spaces
+  const searchName = removeAccents(teamName)
+    .replace(/-[A-Z]{2}$/i, '')  // Remove state suffix like -SP, -RJ
+    .replace(/[^a-zA-Z0-9 ]/g, '') // Remove special chars
     .trim();
 
-  const data = await apiFetch('teams', { search: searchName, country: 'Brazil' });
+  // API-Football doesn't allow `search` + `country` together, so just use search
+  const data = await apiFetch('teams', { search: searchName });
 
   if (!data.response || data.response.length === 0) {
-    // Try without country filter for national teams
-    const data2 = await apiFetch('teams', { search: searchName });
-    if (!data2.response || data2.response.length === 0) {
-      throw new Error(`Time "${teamName}" não encontrado na API`);
-    }
-    const teamId = data2.response[0].team.id;
-    cache[teamName] = teamId;
-    setTeamIdCache(cache);
-    return teamId;
+    throw new Error(`Time "${teamName}" não encontrado na API`);
   }
 
-  const teamId = data.response[0].team.id;
+  // Try to find a Brazilian team first, otherwise take first result
+  const brazilTeam = data.response.find((r: any) => r.team.country === 'Brazil');
+  const picked = brazilTeam || data.response[0];
+
+  const teamId = picked.team.id;
   cache[teamName] = teamId;
   setTeamIdCache(cache);
   return teamId;
