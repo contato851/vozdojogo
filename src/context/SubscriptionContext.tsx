@@ -31,24 +31,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   const checkSubscription = useCallback(async () => {
-    if (!user) {
-      setSubscribed(false);
-      setLoading(false);
-      return;
-    }
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw error;
-      setSubscribed(data.subscribed ?? false);
-      setGracePeriod(data.grace_period ?? false);
-      setGraceDaysRemaining(data.grace_days_remaining ?? 0);
-      setSubscriptionEnd(data.subscription_end ?? null);
-    } catch (err) {
-      console.error('Error checking subscription:', err);
-      setSubscribed(false);
-    } finally {
-      setLoading(false);
-    }
+    // TODO: remover bypass após testes — mantém subscribed=true sempre
+    return;
   }, [user]);
 
   useEffect(() => {
