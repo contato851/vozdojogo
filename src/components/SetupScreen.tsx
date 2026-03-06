@@ -149,12 +149,67 @@ export default function SetupScreen() {
   };
 
   const hasLive = liveState && loadLive()?.matchId === match.id;
-  const teamsSelected = match.teamA.name && match.teamB.name;
+  const teamASelected = match.teamA.name && match.teamA.name !== 'TIME A';
+  const teamBSelected = match.teamB.name && match.teamB.name !== 'TIME B';
+  const teamsSelected = teamASelected && teamBSelected;
+  const noTeamSelected = !teamASelected && !teamBSelected;
 
   return (
     <div style={{ animation: 'fadeUp .3s ease-out' }}>
 
-      {/* === HEADER: VS display like live screen === */}
+      {/* === EMPTY STATE === */}
+      {noTeamSelected && (
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          padding: '48px 24px', marginBottom: 14, textAlign: 'center',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16
+        }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%', 
+            background: 'linear-gradient(135deg, var(--bg3), rgba(0,200,83,0.1))',
+            border: '2px dashed var(--border2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 40
+          }}>⚽</div>
+          <div>
+            <h2 style={{
+              fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
+              letterSpacing: 3, color: 'var(--text)', margin: '0 0 6px'
+            }}>NOVA PARTIDA</h2>
+            <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0, lineHeight: 1.5 }}>
+              Selecione os times para iniciar a configuração da escalação
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button
+              onClick={() => setPickerTeam('teamA')}
+              className="btn-green"
+              style={{ padding: '12px 28px', fontSize: 14, letterSpacing: 1.5 }}
+            >
+              🏠 TIME DA CASA
+            </button>
+            <button
+              onClick={() => setPickerTeam('teamB')}
+              style={{
+                padding: '12px 28px', fontSize: 14, letterSpacing: 1.5,
+                background: 'var(--bg3)', border: '1px solid var(--border2)',
+                color: 'var(--text)', borderRadius: 6, cursor: 'pointer',
+                fontFamily: 'var(--font-head)', fontWeight: 600,
+                transition: 'all .2s'
+              }}
+            >
+              ✈️ VISITANTE
+            </button>
+          </div>
+          {/* Utility buttons */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <input type="file" ref={fileRef} accept=".json" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) importMatch(e.target.files[0]); }} />
+            <button onClick={() => fileRef.current?.click()} className="btn-ghost" style={{ fontSize: 11 }}>📂 Importar partida</button>
+          </div>
+        </div>
+      )}
+
+      {!noTeamSelected && <>{/* === HEADER: VS display like live screen === */}
       <div style={{
         background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '20px', marginBottom: 14
@@ -504,7 +559,7 @@ export default function SetupScreen() {
         <button onClick={() => fileRef.current?.click()} className="btn-ghost" style={{ fontSize: 11 }}>📂 Importar</button>
         <button onClick={exportMatch} className="btn-ghost" style={{ fontSize: 11 }}>💾 Exportar</button>
         <button onClick={newMatch} className="btn-ghost" style={{ fontSize: 11 }}>🆕 Nova Partida</button>
-      </div>
+      </div></>}
 
       {pickerTeam && (
         <TeamPicker
