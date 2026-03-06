@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import TopBar from './components/TopBar';
 import LoginScreen from './components/LoginScreen';
@@ -24,33 +24,45 @@ function AppLayout() {
   );
 }
 
-function AppShell() {
-  const [loggedIn] = useState(() => {
-    try {
-      const s = localStorage.getItem('vdj-session');
-      if (s) { const p = JSON.parse(s); return !!(p && p.email); }
-    } catch (e) { /* */ }
-    return false;
-  });
+function AuthGate() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', background: 'var(--bg)', color: 'var(--green)',
+        fontFamily: 'var(--font-head)', fontSize: 24, letterSpacing: 3
+      }}>
+        CARREGANDO...
+      </div>
+    );
+  }
+
+  if (!user) return <LoginScreen />;
 
   return (
+    <AppProvider>
+      <AppLayout />
+    </AppProvider>
+  );
+}
+
+function AppShell() {
+  return (
     <BrowserRouter>
-      <AppProvider>
+      <AuthProvider>
         <Routes>
-          {/* Public viewer route - no auth required */}
-          <Route path="/ao-vivo/:shareCode" element={<ViewerScreen />} />
-          
-          {/* App routes */}
-          <Route path="*" element={
-            loggedIn ? <AppLayout /> : (
-              <Routes>
-                <Route path="/login" element={<LoginScreen />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </Routes>
-            )
+          {/* Public viewer route */}
+          <Route path="/ao-vivo/:shareCode" element={
+            <AppProvider>
+              <ViewerScreen />
+            </AppProvider>
           } />
+          {/* All other routes go through auth */}
+          <Route path="*" element={<AuthGate />} />
         </Routes>
-      </AppProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
