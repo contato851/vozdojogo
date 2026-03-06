@@ -26,7 +26,7 @@ export default function LoginScreen() {
       setMsg({ text: 'A senha deve ter pelo menos 6 caracteres.', type: 'error' });
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     setMsg(null);
 
     const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
