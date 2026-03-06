@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import Logo from './Logo';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -40,12 +41,7 @@ export default function LoginScreen() {
     }}>
       <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
         <div style={{ marginBottom: 12 }}>
-          <div style={{
-            fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700,
-            color: 'var(--green)', letterSpacing: 4, lineHeight: 1
-          }}>
-            VOZ DO JOGO
-          </div>
+          <Logo size="lg" />
         </div>
         <div style={{
           color: 'var(--text2)', fontSize: 13, marginBottom: 32,
