@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CustomTeam, CustomTeamPlayer } from '@/hooks/useCustomTeams';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface Props {
   team?: CustomTeam;
@@ -8,6 +10,7 @@ interface Props {
 }
 
 export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
+  const { user } = useAuth();
   const [name, setName] = useState(team?.name || '');
   const [abbreviation, setAbbreviation] = useState(team?.abbreviation || '');
   const [color, setColor] = useState(team?.color || '#003399');
@@ -17,6 +20,22 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
     team?.players?.length ? team.players : [{ number: '', name: '' }]
   );
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('team-logos').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = supabase.storage.from('team-logos').getPublicUrl(path);
+      setLogoUrl(data.publicUrl);
+    }
+    setUploading(false);
+  };
 
   const addPlayer = () => setPlayers([...players, { number: '', name: '' }]);
 
