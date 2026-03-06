@@ -200,16 +200,15 @@ export default function LiveScreen() {
       {/* Header with scoreboard */}
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px', marginBottom: 12 }}>
         {/* Main row: TeamA | Clock | TeamB */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Team A: logo + score + goals */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <LiveTeamLogo teamName={tA.name} size={80} />
-            <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{goalsA}</span>
-            {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
-              <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6, textAlign: 'center' }}>
-                ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
-              </div>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          {/* Team A */}
+          <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 88, height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LiveTeamLogo teamName={tA.name} size={80} />
+            </div>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1, marginTop: 2 }}>
+              {goalsA}
+            </div>
           </div>
 
           {/* Clock center */}
@@ -241,17 +240,37 @@ export default function LiveScreen() {
             </div>
           </div>
 
-          {/* Team B: logo + score + goals */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <LiveTeamLogo teamName={tB.name} size={80} />
-            <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{goalsB}</span>
-            {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
-              <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6, textAlign: 'center' }}>
-                ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
-              </div>
-            ))}
+          {/* Team B */}
+          <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 88, height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LiveTeamLogo teamName={tB.name} size={80} />
+            </div>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1, marginTop: 2 }}>
+              {goalsB}
+            </div>
           </div>
         </div>
+
+        {/* Goals log */}
+        {goalLog.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ flexShrink: 0, width: 140 }} />
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Share button */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 10 }}>
           <button
