@@ -239,13 +239,11 @@ export default function LiveScreen() {
           </div>
 
           {/* Team B */}
-          <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 88, height: 88, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <LiveTeamLogo teamName={tB.name} size={80} />
-            </div>
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1, marginTop: 2 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsB}
             </div>
+            <LiveTeamLogo teamName={tB.name} size={80} />
           </div>
         </div>
 
