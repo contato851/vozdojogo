@@ -686,19 +686,20 @@ function TacticalField({ ls, setLiveState, match }: { ls: LiveState; setLiveStat
           }}
         >
           <div style={{
-            width: 32, height: 32, borderRadius: '50%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontSize: 13,
-            fontWeight: 800, fontFamily: 'var(--font-head)', letterSpacing: 1,
+            width: 36, height: 36, borderRadius: '50%', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            fontWeight: 900, fontFamily: 'var(--font-head)', letterSpacing: 0,
             boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
             border: p.redCard ? '2px solid var(--red)' : '2px solid rgba(255,255,255,0.3)',
-            background: team.color, color: team.accent, transition: 'transform .2s'
+            background: team.color, color: team.accent, transition: 'transform .2s',
+            lineHeight: 1
           }}>
             {p.number}
           </div>
           <div style={{
-            fontSize: 8, fontWeight: 700, color: '#fff',
-            textShadow: '0 1px 4px rgba(0,0,0,0.8)', marginTop: 1,
-            whiteSpace: 'nowrap', letterSpacing: 0.5, maxWidth: 70,
+            fontSize: 11, fontWeight: 700, color: '#fff',
+            textShadow: '0 1px 4px rgba(0,0,0,0.8)', marginTop: 2,
+            whiteSpace: 'nowrap', letterSpacing: 0.5, maxWidth: 80,
             overflow: 'hidden', textOverflow: 'ellipsis'
           }}>
             {p.name}
