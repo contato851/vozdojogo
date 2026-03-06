@@ -3,7 +3,18 @@ import { useApp } from '../context/AppContext';
 import { FORMATIONS, FORMATION_KEYS } from '../data/formations';
 import { loadLive } from '../data/store';
 import { fetchSquad } from '../data/apiFootball';
+import { useTeamLogo } from '../hooks/useTeamLogo';
 import TeamPicker from './TeamPicker';
+
+function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
+  const { logoUrl } = useTeamLogo(teamName, false);
+  const [err, setErr] = useState(false);
+  if (!logoUrl || err) return null;
+  return (
+    <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
+      style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
+  );
+}
 
 export default function SetupScreen() {
   const { match, setMatch, liveState, startLive, resetLive, newMatch, exportMatch, importMatch } = useApp();
@@ -17,20 +28,13 @@ export default function SetupScreen() {
   const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
     dragItem.current = { tk, type, idx };
   };
-
   const handleDragEnter = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
     dragOver.current = { tk, type, idx };
   };
-
   const handleDragEnd = () => {
     const from = dragItem.current;
     const to = dragOver.current;
-    if (!from || !to || from.tk !== to.tk || from.type !== to.type) {
-      dragItem.current = null;
-      dragOver.current = null;
-      return;
-    }
-    if (from.idx === to.idx) {
+    if (!from || !to || from.tk !== to.tk || from.type !== to.type || from.idx === to.idx) {
       dragItem.current = null;
       dragOver.current = null;
       return;
@@ -50,11 +54,9 @@ export default function SetupScreen() {
   const updateField = (field: string, value: string) => {
     setMatch(m => ({ ...m, [field]: value }));
   };
-
   const updateTeam = (tk: 'teamA' | 'teamB', field: string, value: string) => {
     setMatch(m => ({ ...m, [tk]: { ...m[tk], [field]: value } }));
   };
-
   const updatePlayer = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number, field: string, value: string) => {
     setMatch(m => {
       const team = { ...m[tk] };
@@ -64,7 +66,6 @@ export default function SetupScreen() {
       return { ...m, [tk]: team };
     });
   };
-
   const addReserve = (tk: 'teamA' | 'teamB') => {
     setMatch(m => {
       const team = { ...m[tk] };
@@ -72,7 +73,6 @@ export default function SetupScreen() {
       return { ...m, [tk]: team };
     });
   };
-
   const removeReserve = (tk: 'teamA' | 'teamB', idx: number) => {
     setMatch(m => {
       const team = { ...m[tk] };
@@ -87,8 +87,6 @@ export default function SetupScreen() {
       [tk]: { ...m[tk], name: team.name, color: team.color, accent: team.accent }
     }));
     setPickerTeam(null);
-
-    // Auto-fetch squad
     setFetchingSquad(tk);
     setSquadError(null);
     try {
@@ -110,25 +108,101 @@ export default function SetupScreen() {
   };
 
   const hasLive = liveState && loadLive()?.matchId === match.id;
-
-  const infoFields: [string, string][] = [
-    ['stadium', 'Estádio'], ['referee', 'Árbitro'], ['assistant1', 'Assistente 1'],
-    ['assistant2', 'Assistente 2'], ['var_ref', 'VAR'], ['reporter', 'Reportagem'],
-    ['commentators', 'Comentários']
-  ];
+  const teamsSelected = match.teamA.name && match.teamB.name;
 
   return (
     <div style={{ animation: 'fadeUp .3s ease-out' }}>
-      {/* Action buttons */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-        <button onClick={startLive} className="btn-green">⚡ INICIAR TRANSMISSÃO</button>
-        {hasLive && <button onClick={resetLive} className="btn-red">🔄 Reiniciar Transmissão</button>}
-      </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16, marginTop: -8 }}>
-        <input type="file" ref={fileRef} accept=".json" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) importMatch(e.target.files[0]); }} />
-        <button onClick={() => fileRef.current?.click()} className="btn-ghost">📂 Importar Partida</button>
-        <button onClick={exportMatch} className="btn-ghost">💾 Exportar</button>
-        <button onClick={newMatch} className="btn-ghost">🆕 Nova Partida</button>
+
+      {/* === HEADER: VS display like live screen === */}
+      <div style={{
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+        padding: '20px', marginBottom: 14
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
+          {/* Team A */}
+          <div
+            onClick={() => setPickerTeam('teamA')}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              cursor: 'pointer', padding: 16, borderRadius: 8, border: '1px solid var(--border)',
+              background: match.teamA.name ? 'rgba(0,0,0,0.2)' : 'var(--bg3)',
+              transition: 'all .2s', position: 'relative'
+            }}
+          >
+            {fetchingSquad === 'teamA' && (
+              <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, color: 'var(--green)' }}>⏳ Buscando...</div>
+            )}
+            {match.teamA.name ? (
+              <>
+                <LiveTeamLogo teamName={match.teamA.name} size={56} />
+                <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: match.teamA.accent, textAlign: 'center' }}>
+                  {match.teamA.name}
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1 }}>CLIQUE PARA TROCAR</span>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%', background: 'var(--bg)', border: '2px dashed var(--border2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: 'var(--text3)'
+                }}>⚽</div>
+                <span style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, color: 'var(--text3)', letterSpacing: 1 }}>
+                  SELECIONAR TIME A
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* VS */}
+          <div style={{
+            fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 700, color: 'var(--text3)',
+            letterSpacing: 4, flexShrink: 0
+          }}>VS</div>
+
+          {/* Team B */}
+          <div
+            onClick={() => setPickerTeam('teamB')}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              cursor: 'pointer', padding: 16, borderRadius: 8, border: '1px solid var(--border)',
+              background: match.teamB.name ? 'rgba(0,0,0,0.2)' : 'var(--bg3)',
+              transition: 'all .2s', position: 'relative'
+            }}
+          >
+            {fetchingSquad === 'teamB' && (
+              <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, color: 'var(--green)' }}>⏳ Buscando...</div>
+            )}
+            {match.teamB.name ? (
+              <>
+                <LiveTeamLogo teamName={match.teamB.name} size={56} />
+                <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: match.teamB.accent, textAlign: 'center' }}>
+                  {match.teamB.name}
+                </span>
+                <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1 }}>CLIQUE PARA TROCAR</span>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%', background: 'var(--bg)', border: '2px dashed var(--border2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: 'var(--text3)'
+                }}>⚽</div>
+                <span style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, color: 'var(--text3)', letterSpacing: 1 }}>
+                  SELECIONAR TIME B
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Start button */}
+        {teamsSelected && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+            <button onClick={startLive} className="btn-green" style={{ padding: '12px 32px', fontSize: 16, letterSpacing: 2 }}>
+              ▶ INICIAR TRANSMISSÃO
+            </button>
+            {hasLive && <button onClick={resetLive} className="btn-red" style={{ padding: '12px 20px', fontSize: 13 }}>🔄 Reiniciar</button>}
+          </div>
+        )}
       </div>
 
       {/* Squad error */}
@@ -142,159 +216,193 @@ export default function SetupScreen() {
         </div>
       )}
 
-      {/* Match info */}
-      <Card title="Informações da Partida">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {infoFields.map(([f, l]) => (
-            <div key={f}>
-              <Label>{l}</Label>
-              <Input value={(match as any)[f] || ''} onChange={v => updateField(f, v)} placeholder={l.toUpperCase()} />
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* === MATCH INFO (collapsible) === */}
+      <MatchInfoSection match={match} updateField={updateField} />
 
-      {/* Sort order */}
-      <Card>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <Label>Ordenação da Escalação</Label>
-            <span style={{ fontSize: 12, color: 'var(--text2)' }}>Como os titulares aparecem na tela ao vivo</span>
-          </div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              onClick={() => updateField('sortOrder', 'number')}
-              className={match.sortOrder !== 'manual' ? 'btn-green' : 'btn-ghost'}
-            >Por Número</button>
-            <button
-              onClick={() => updateField('sortOrder', 'manual')}
-              className={match.sortOrder === 'manual' ? 'btn-green' : 'btn-ghost'}
-            >Ordem Manual</button>
-          </div>
+      {/* === SORT ORDER === */}
+      <div style={{
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+        padding: '10px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+      }}>
+        <span style={{ fontSize: 11, color: 'var(--text2)' }}>Ordenação da escalação:</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={() => updateField('sortOrder', 'number')}
+            className={match.sortOrder !== 'manual' ? 'btn-green' : 'btn-ghost'}
+            style={{ fontSize: 11, padding: '4px 12px' }}>Por Número</button>
+          <button onClick={() => updateField('sortOrder', 'manual')}
+            className={match.sortOrder === 'manual' ? 'btn-green' : 'btn-ghost'}
+            style={{ fontSize: 11, padding: '4px 12px' }}>Ordem Manual</button>
         </div>
-      </Card>
+      </div>
 
-      {/* Teams */}
+      {/* === TEAM CARDS (live-style) === */}
       <div style={{ display: 'flex', gap: 14 }}>
-        {(['teamA', 'teamB'] as const).map(tk => (
-          <div key={tk} style={{ flex: 1, minWidth: 0 }}>
-            <Card>
-              <div style={{ marginBottom: 12 }}>
-                <button onClick={() => setPickerTeam(tk)} className="btn-ghost" style={{ width: '100%', padding: 10, fontSize: 12 }}>
-                  {fetchingSquad === tk ? '⏳ Buscando elenco...' : '⚽ Selecionar Time'}
-                </button>
-              </div>
+        {(['teamA', 'teamB'] as const).map(tk => {
+          const team = match[tk];
+          const hasTeam = !!team.name;
+          return (
+            <div key={tk} style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                overflow: 'hidden'
+              }}>
+                {/* Header - like live screen */}
+                <div style={{
+                  padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  background: hasTeam ? team.color : 'var(--bg3)'
+                }}>
+                  {hasTeam && <LiveTeamLogo teamName={team.name} size={28} />}
+                  <span style={{
+                    fontFamily: 'var(--font-head)', fontSize: hasTeam ? 22 : 16, fontWeight: 700,
+                    letterSpacing: 3, color: hasTeam ? team.accent : 'var(--text3)'
+                  }}>
+                    {hasTeam ? team.name : `TIME ${tk === 'teamA' ? 'A' : 'B'}`}
+                  </span>
+                </div>
 
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <Label>Nome</Label>
-                  <Input value={match[tk].name} onChange={v => updateTeam(tk, 'name', v)} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <Label>Técnico</Label>
-                  <Input value={match[tk].coach} onChange={v => updateTeam(tk, 'coach', v)} />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <div style={{ display: 'flex', gap: 10, flex: 1 }}>
-                  <label style={{ width: 90 }}>
-                    <Label>Cor</Label>
-                    <input type="color" value={match[tk].color} onChange={e => updateTeam(tk, 'color', e.target.value)}
-                      style={{ width: '100%', height: 34, border: 'none', borderRadius: 6, cursor: 'pointer', background: 'transparent' }} />
-                  </label>
-                  <label style={{ width: 90 }}>
-                    <Label>Destaque</Label>
-                    <input type="color" value={match[tk].accent} onChange={e => updateTeam(tk, 'accent', e.target.value)}
-                      style={{ width: '100%', height: 34, border: 'none', borderRadius: 6, cursor: 'pointer', background: 'transparent' }} />
-                  </label>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <Label>Formação</Label>
-                  <select
-                    value={match[tk].formation}
-                    onChange={e => updateTeam(tk, 'formation', e.target.value)}
-                    style={{
-                      background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
-                      padding: '6px 10px', color: 'var(--text)', fontSize: 12,
-                      fontFamily: 'var(--font-body)', outline: 'none', cursor: 'pointer', width: '100%'
-                    }}
-                  >
-                    {FORMATION_KEYS.map(k => (
-                      <option key={k} value={k}>{FORMATIONS[k].label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <Label>Titulares (11)</Label>
-              {match[tk].starters.map((p, i) => (
-                <div
-                  key={p.id}
-                  draggable
-                  onDragStart={() => handleDragStart(tk, 'starters', i)}
-                  onDragEnter={() => handleDragEnter(tk, 'starters', i)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={e => e.preventDefault()}
-                  style={{ display: 'flex', gap: 5, marginBottom: 3, alignItems: 'center', cursor: 'grab' }}
-                >
-                  <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 14, textAlign: 'center', flexShrink: 0 }}>⠿</span>
-                  <Input
-                    value={p.number}
-                    onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
-                    style={{ width: 52, textAlign: 'center', flexShrink: 0 }}
-                  />
-                  <Input
-                    value={p.name}
-                    onChange={v => updatePlayer(tk, 'starters', i, 'name', v)}
-                    onBlur={v => updatePlayer(tk, 'starters', i, 'name', v.toUpperCase())}
-                    placeholder={`Titular ${i + 1}`}
-                    style={{ flex: 1 }}
-                  />
-                </div>
-              ))}
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '12px 0 4px' }}>
-                <Label>Reservas</Label>
-                <button onClick={() => addReserve(tk)} style={{
-                  background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
-                  fontSize: 11, padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontFamily: 'var(--font-body)'
-                }}>+ Reserva</button>
-              </div>
-              <div style={{ maxHeight: 260, overflowY: 'auto' }}>
-                {match[tk].reserves.map((p, i) => (
-                  <div
-                    key={p.id}
-                    draggable
-                    onDragStart={() => handleDragStart(tk, 'reserves', i)}
-                    onDragEnter={() => handleDragEnter(tk, 'reserves', i)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={e => e.preventDefault()}
-                    style={{ display: 'flex', gap: 5, marginBottom: 3, alignItems: 'center', cursor: 'grab' }}
-                  >
-                    <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 14, textAlign: 'center', flexShrink: 0 }}>⠿</span>
-                    <Input
-                      value={p.number}
-                      onChange={v => updatePlayer(tk, 'reserves', i, 'number', v)}
-                      style={{ width: 52, textAlign: 'center', flexShrink: 0 }}
-                    />
-                    <Input
-                      value={p.name}
-                      onChange={v => updatePlayer(tk, 'reserves', i, 'name', v)}
-                      onBlur={v => updatePlayer(tk, 'reserves', i, 'name', v.toUpperCase())}
-                      placeholder={`Reserva ${i + 1}`}
-                      style={{ flex: 1 }}
-                    />
-                    <button onClick={() => removeReserve(tk, i)} style={{
-                      background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
-                      fontSize: 14, width: 26, height: 34, borderRadius: 4, cursor: 'pointer', flexShrink: 0
-                    }}>×</button>
+                <div style={{ padding: 16 }}>
+                  {/* Team details */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <Label>Técnico</Label>
+                      <Input value={team.coach} onChange={v => updateTeam(tk, 'coach', v)} placeholder="Nome do técnico" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <Label>Formação</Label>
+                      <select value={team.formation} onChange={e => updateTeam(tk, 'formation', e.target.value)}
+                        style={{
+                          background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
+                          padding: '8px 10px', color: 'var(--text)', fontSize: 12,
+                          fontFamily: 'var(--font-body)', outline: 'none', cursor: 'pointer', width: '100%'
+                        }}>
+                        {FORMATION_KEYS.map(k => (
+                          <option key={k} value={k}>{FORMATIONS[k].label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                ))}
+
+                  {/* Colors row */}
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>COR</span>
+                      <input type="color" value={team.color} onChange={e => updateTeam(tk, 'color', e.target.value)}
+                        style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>DESTAQUE</span>
+                      <input type="color" value={team.accent} onChange={e => updateTeam(tk, 'accent', e.target.value)}
+                        style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
+                    </label>
+                  </div>
+
+                  {/* Titulares - live style with number badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Label>Titulares (11)</Label>
+                    <span style={{ fontSize: 9, color: 'var(--text3)' }}>⠿ arraste para reordenar</span>
+                  </div>
+                  {team.starters.map((p, i) => (
+                    <div
+                      key={p.id}
+                      draggable
+                      onDragStart={() => handleDragStart(tk, 'starters', i)}
+                      onDragEnter={() => handleDragEnter(tk, 'starters', i)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={e => e.preventDefault()}
+                      style={{
+                        display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
+                        padding: '3px 4px', borderRadius: 4, transition: 'background .15s'
+                      }}
+                    >
+                      <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
+                      <Input
+                        value={p.number}
+                        onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
+                        style={{
+                          width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
+                          fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14,
+                          background: hasTeam ? team.color : 'var(--bg3)',
+                          color: hasTeam ? team.accent : 'var(--text)',
+                          borderRadius: 6, border: 'none'
+                        }}
+                      />
+                      <Input
+                        value={p.name}
+                        onChange={v => updatePlayer(tk, 'starters', i, 'name', v)}
+                        onBlur={v => updatePlayer(tk, 'starters', i, 'name', v.toUpperCase())}
+                        placeholder={`Titular ${i + 1}`}
+                        style={{ flex: 1, padding: '6px 10px', fontSize: 12, fontWeight: 600 }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Reservas */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 0 4px' }}>
+                    <Label>Reservas ({team.reserves.length})</Label>
+                    <button onClick={() => addReserve(tk)} style={{
+                      background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
+                      fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontFamily: 'var(--font-body)'
+                    }}>+ Reserva</button>
+                  </div>
+                  <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                    {team.reserves.map((p, i) => (
+                      <div
+                        key={p.id}
+                        draggable
+                        onDragStart={() => handleDragStart(tk, 'reserves', i)}
+                        onDragEnter={() => handleDragEnter(tk, 'reserves', i)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={e => e.preventDefault()}
+                        style={{
+                          display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'grab',
+                          padding: '3px 4px', borderRadius: 4
+                        }}
+                      >
+                        <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 12, flexShrink: 0 }}>⠿</span>
+                        <Input
+                          value={p.number}
+                          onChange={v => updatePlayer(tk, 'reserves', i, 'number', v)}
+                          style={{
+                            width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
+                            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 13,
+                            background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 6, border: 'none'
+                          }}
+                        />
+                        <Input
+                          value={p.name}
+                          onChange={v => updatePlayer(tk, 'reserves', i, 'name', v)}
+                          onBlur={v => updatePlayer(tk, 'reserves', i, 'name', v.toUpperCase())}
+                          placeholder={`Reserva ${i + 1}`}
+                          style={{ flex: 1, padding: '6px 10px', fontSize: 11 }}
+                        />
+                        <button onClick={() => removeReserve(tk, i)} style={{
+                          background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
+                          fontSize: 13, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
+                        }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Coach footer */}
+                  {team.coach && (
+                    <div style={{ padding: '8px 0 0', borderTop: '1px solid var(--border)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 9, letterSpacing: 1.5, color: 'var(--text3)', fontWeight: 700 }}>TÉCNICO:</span>
+                      <span style={{ color: hasTeam ? team.accent : 'var(--text)', fontSize: 12, fontWeight: 600 }}>{team.coach}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </Card>
-          </div>
-        ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Utility buttons */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 14 }}>
+        <input type="file" ref={fileRef} accept=".json" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) importMatch(e.target.files[0]); }} />
+        <button onClick={() => fileRef.current?.click()} className="btn-ghost" style={{ fontSize: 11 }}>📂 Importar</button>
+        <button onClick={exportMatch} className="btn-ghost" style={{ fontSize: 11 }}>💾 Exportar</button>
+        <button onClick={newMatch} className="btn-ghost" style={{ fontSize: 11 }}>🆕 Nova Partida</button>
       </div>
 
       {pickerTeam && (
@@ -307,22 +415,37 @@ export default function SetupScreen() {
   );
 }
 
-function Card({ title, children }: { title?: string; children: React.ReactNode }) {
+function MatchInfoSection({ match, updateField }: { match: any; updateField: (f: string, v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const infoFields: [string, string][] = [
+    ['stadium', 'Estádio'], ['referee', 'Árbitro'], ['assistant1', 'Assistente 1'],
+    ['assistant2', 'Assistente 2'], ['var_ref', 'VAR'], ['reporter', 'Reportagem'],
+    ['commentators', 'Comentários']
+  ];
+
   return (
     <div style={{
-      background: 'var(--bg2)', border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)', padding: 20, marginBottom: 14
+      background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+      marginBottom: 14, overflow: 'hidden'
     }}>
-      {title && (
-        <div style={{
-          fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 600,
-          color: 'var(--green)', letterSpacing: 1, marginBottom: 12, display: 'flex',
-          alignItems: 'center', gap: 8
-        }}>
-          {title}
+      <button onClick={() => setOpen(!open)} style={{
+        width: '100%', padding: '10px 16px', background: 'none', border: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        cursor: 'pointer', color: 'var(--text2)', fontFamily: 'var(--font-body)', fontSize: 12
+      }}>
+        <span style={{ fontWeight: 600, letterSpacing: 1 }}>📋 INFORMAÇÕES DA PARTIDA</span>
+        <span style={{ fontSize: 10, color: 'var(--text3)' }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {infoFields.map(([f, l]) => (
+            <div key={f}>
+              <Label>{l}</Label>
+              <Input value={match[f] || ''} onChange={v => updateField(f, v)} placeholder={l.toUpperCase()} />
+            </div>
+          ))}
         </div>
       )}
-      {children}
     </div>
   );
 }
@@ -330,8 +453,8 @@ function Card({ title, children }: { title?: string; children: React.ReactNode }
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: 'var(--text3)',
-      textTransform: 'uppercase', marginBottom: 4, fontFamily: 'var(--font-body)'
+      fontSize: 9, fontWeight: 600, letterSpacing: 1.5, color: 'var(--text3)',
+      textTransform: 'uppercase', marginBottom: 3, fontFamily: 'var(--font-body)'
     }}>
       {children}
     </div>
