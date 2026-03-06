@@ -3,6 +3,23 @@ import { useApp } from '../context/AppContext';
 import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
 import { formatClock, getClockElapsed, getClockMinute, sortByNumber } from '../data/store';
+import { useTeamLogo } from '../hooks/useTeamLogo';
+
+// Small inline logo for live screen
+function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
+  const { logoUrl } = useTeamLogo(teamName, false);
+  const [err, setErr] = useState(false);
+  if (!logoUrl || err) return null;
+  return (
+    <img
+      src={logoUrl}
+      alt={teamName}
+      onError={() => setErr(true)}
+      style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }}
+      loading="lazy"
+    />
+  );
+}
 
 export default function LiveScreen() {
   const { match, liveState, setLiveState, showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab, liveView, setLiveView } = useApp();
@@ -139,17 +156,19 @@ export default function LiveScreen() {
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 12 }}>
         {/* Score */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-          <div style={{ flex: 1, textAlign: 'right', paddingRight: 16 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 16, gap: 10 }}>
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 34, fontWeight: 700, letterSpacing: 2, lineHeight: 1.1, color: tA.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {tA.name}
             </div>
+            <LiveTeamLogo teamName={tA.name} size={38} />
           </div>
           <div style={{ flexShrink: 0 }}>
             <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, background: 'var(--bg3)', padding: '4px 22px', borderRadius: 8, letterSpacing: 4, display: 'inline-block', border: '1px solid var(--border)' }}>
               {goalsA}<span style={{ color: 'var(--text3)', fontSize: 32, margin: '0 6px' }}>×</span>{goalsB}
             </span>
           </div>
-          <div style={{ flex: 1, textAlign: 'left', paddingLeft: 16 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 16, gap: 10 }}>
+            <LiveTeamLogo teamName={tB.name} size={38} />
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 34, fontWeight: 700, letterSpacing: 2, lineHeight: 1.1, color: tB.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {tB.name}
             </div>
@@ -354,7 +373,8 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
 
   return (
     <div>
-      <div style={{ padding: '12px 16px', borderRadius: '8px 8px 0 0', textAlign: 'center', background: team.color }}>
+      <div style={{ padding: '12px 16px', borderRadius: '8px 8px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: team.color }}>
+        <LiveTeamLogo teamName={team.name} size={28} />
         <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700, letterSpacing: 3, color: team.accent }}>{team.name}</span>
       </div>
       <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '0 0 8px 8px' }}>
