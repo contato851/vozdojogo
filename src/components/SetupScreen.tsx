@@ -288,10 +288,13 @@ export default function SetupScreen() {
                 overflow: 'hidden'
               }}>
                 {/* Header - like live screen */}
-                <div style={{
-                  padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  background: hasTeam ? team.color : 'var(--bg3)'
-                }}>
+                <div
+                  onClick={() => setPickerTeam(tk)}
+                  style={{
+                    padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    background: hasTeam ? team.color : 'var(--bg3)', cursor: 'pointer', transition: 'opacity .2s'
+                  }}
+                >
                   {hasTeam && <LiveTeamLogo teamName={team.name} size={28} />}
                   <span style={{
                     fontFamily: 'var(--font-head)', fontSize: hasTeam ? 22 : 16, fontWeight: 700,
