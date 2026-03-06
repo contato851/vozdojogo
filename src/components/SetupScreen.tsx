@@ -123,12 +123,29 @@ export default function SetupScreen() {
     });
   };
 
-  const selectTeam = async (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string }) => {
+  const selectTeam = async (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
     setMatch(m => ({
       ...m,
       [tk]: { ...m[tk], name: team.name, color: team.color, accent: team.accent }
     }));
     setPickerTeam(null);
+
+    // If custom team with players, use those directly
+    if (team.customPlayers && team.customPlayers.length > 0) {
+      const allPlayers = team.customPlayers.map((p, i) => ({
+        id: `cp-${Date.now()}-${i}`,
+        number: p.number || '',
+        name: p.name,
+      }));
+      const starters = allPlayers.slice(0, 11);
+      const reserves = allPlayers.slice(11);
+      setMatch(m => ({
+        ...m,
+        [tk]: { ...m[tk], starters, reserves }
+      }));
+      return;
+    }
+
     setFetchingSquad(tk);
     setSquadError(null);
     try {
