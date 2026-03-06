@@ -11,6 +11,41 @@ export default function SetupScreen() {
   const [fetchingSquad, setFetchingSquad] = useState<'teamA' | 'teamB' | null>(null);
   const [squadError, setSquadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
+  const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves'; idx: number } | null>(null);
+
+  const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
+    dragItem.current = { tk, type, idx };
+  };
+
+  const handleDragEnter = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
+    dragOver.current = { tk, type, idx };
+  };
+
+  const handleDragEnd = () => {
+    const from = dragItem.current;
+    const to = dragOver.current;
+    if (!from || !to || from.tk !== to.tk || from.type !== to.type) {
+      dragItem.current = null;
+      dragOver.current = null;
+      return;
+    }
+    if (from.idx === to.idx) {
+      dragItem.current = null;
+      dragOver.current = null;
+      return;
+    }
+    setMatch(m => {
+      const team = { ...m[from.tk] };
+      const players = [...team[from.type]];
+      const [moved] = players.splice(from.idx, 1);
+      players.splice(to.idx, 0, moved);
+      team[from.type] = players;
+      return { ...m, [from.tk]: team };
+    });
+    dragItem.current = null;
+    dragOver.current = null;
+  };
 
   const updateField = (field: string, value: string) => {
     setMatch(m => ({ ...m, [field]: value }));
@@ -194,7 +229,16 @@ export default function SetupScreen() {
 
               <Label>Titulares (11)</Label>
               {match[tk].starters.map((p, i) => (
-                <div key={p.id} style={{ display: 'flex', gap: 5, marginBottom: 3 }}>
+                <div
+                  key={p.id}
+                  draggable
+                  onDragStart={() => handleDragStart(tk, 'starters', i)}
+                  onDragEnter={() => handleDragEnter(tk, 'starters', i)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={e => e.preventDefault()}
+                  style={{ display: 'flex', gap: 5, marginBottom: 3, alignItems: 'center', cursor: 'grab' }}
+                >
+                  <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 14, textAlign: 'center', flexShrink: 0 }}>⠿</span>
                   <Input
                     value={p.number}
                     onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
@@ -219,7 +263,16 @@ export default function SetupScreen() {
               </div>
               <div style={{ maxHeight: 260, overflowY: 'auto' }}>
                 {match[tk].reserves.map((p, i) => (
-                  <div key={p.id} style={{ display: 'flex', gap: 5, marginBottom: 3 }}>
+                  <div
+                    key={p.id}
+                    draggable
+                    onDragStart={() => handleDragStart(tk, 'reserves', i)}
+                    onDragEnter={() => handleDragEnter(tk, 'reserves', i)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={e => e.preventDefault()}
+                    style={{ display: 'flex', gap: 5, marginBottom: 3, alignItems: 'center', cursor: 'grab' }}
+                  >
+                    <span style={{ color: 'var(--text3)', fontSize: 10, cursor: 'grab', userSelect: 'none', width: 14, textAlign: 'center', flexShrink: 0 }}>⠿</span>
                     <Input
                       value={p.number}
                       onChange={v => updatePlayer(tk, 'reserves', i, 'number', v)}
