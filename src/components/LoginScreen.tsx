@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
-  const { signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp } = useAuth();
+
+  if (loading) return null;
+  if (user) return <Navigate to="/escalacao" replace />;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
