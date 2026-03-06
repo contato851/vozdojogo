@@ -6,6 +6,7 @@ import LoginScreen from './components/LoginScreen';
 import SetupScreen from './components/SetupScreen';
 import NotesScreen from './components/NotesScreen';
 import LiveScreen from './components/LiveScreen';
+import ViewerScreen from './components/ViewerScreen';
 import NotFound from './pages/NotFound';
 
 function AppLayout() {
@@ -35,12 +36,20 @@ function AppShell() {
   return (
     <BrowserRouter>
       <AppProvider>
-        {loggedIn ? <AppLayout /> : (
-          <Routes>
-            <Route path="/login" element={<LoginScreen />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        )}
+        <Routes>
+          {/* Public viewer route - no auth required */}
+          <Route path="/ao-vivo/:shareCode" element={<ViewerScreen />} />
+          
+          {/* App routes */}
+          <Route path="*" element={
+            loggedIn ? <AppLayout /> : (
+              <Routes>
+                <Route path="/login" element={<LoginScreen />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            )
+          } />
+        </Routes>
       </AppProvider>
     </BrowserRouter>
   );

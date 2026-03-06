@@ -4,6 +4,10 @@ import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
 import { formatClock, getClockElapsed, getClockMinute, sortByNumber } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
+import {
+  createBroadcast, updateBroadcastState, stopBroadcast,
+  getCurrentShareCode, getCurrentBroadcastId, setCurrentBroadcast
+} from '../data/broadcast';
 
 // Small inline logo for live screen
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
@@ -26,6 +30,9 @@ export default function LiveScreen() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [clockDisplay, setClockDisplay] = useState('00:00');
   const clockRef = useRef<number>();
+  const [shareCode, setShareCode] = useState<string | null>(getCurrentShareCode());
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const ls = liveState;
 
@@ -40,12 +47,50 @@ export default function LiveScreen() {
     return () => clearInterval(id);
   }, [ls?.clock?.running, ls?.clock?.startedAt, ls?.clock?.elapsed]);
 
+
+
+  useEffect(() => {
+    if (shareCode && ls) {
+      updateBroadcastState(ls, match);
+    }
+  }, [ls, shareCode, match]);
+
+  const handleShare = async () => {
+    if (shareCode) {
+      // Copy link
+      const url = `${window.location.origin}/ao-vivo/${shareCode}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    if (!ls) return;
+    setSharing(true);
+    try {
+      const code = await createBroadcast(match);
+      setShareCode(code);
+      await updateBroadcastState(ls, match);
+      const url = `${window.location.origin}/ao-vivo/${code}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Erro ao compartilhar:', err);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleStopShare = async () => {
+    await stopBroadcast();
+    setShareCode(null);
+  };
+
+
   if (!ls) return null;
 
   const tA = ls.teamA;
   const tB = ls.teamB;
-
-
 
   const toggleClock = () => {
     setLiveState(prev => {
@@ -215,6 +260,36 @@ export default function LiveScreen() {
               ↺ ZERAR
             </button>
           </div>
+        </div>
+        {/* Share button */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 10 }}>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            style={{
+              fontSize: 11, padding: '6px 16px', borderRadius: 6, cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
+              border: `1px solid ${shareCode ? 'var(--green)' : 'var(--border2)'}`,
+              background: shareCode ? 'var(--green-dim)' : 'var(--bg3)',
+              color: shareCode ? 'var(--green)' : 'var(--text2)',
+              transition: 'all .2s'
+            }}
+          >
+            {sharing ? '⏳ Gerando...' : copied ? '✓ Link copiado!' : shareCode ? '🔗 Copiar Link' : '📡 Compartilhar Ao Vivo'}
+          </button>
+          {shareCode && (
+            <button
+              onClick={handleStopShare}
+              style={{
+                fontSize: 11, padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
+                fontFamily: 'var(--font-body)', fontWeight: 700,
+                border: '1px solid rgba(255,61,61,0.3)', background: 'rgba(255,61,61,0.1)',
+                color: 'var(--red)', transition: 'all .2s'
+              }}
+            >
+              ✕ Encerrar
+            </button>
+          )}
         </div>
       </div>
 
