@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Match, LiveState, SavedLive, Player } from '../data/types';
 import {
   genId, newMatchData, saveMatches as saveMatchesToLS, loadMatches, saveLive as saveLiveToLS,
@@ -10,8 +11,6 @@ interface AppContextType {
   setMatch: React.Dispatch<React.SetStateAction<Match>>;
   liveState: LiveState | null;
   setLiveState: React.Dispatch<React.SetStateAction<LiveState | null>>;
-  screen: string;
-  setScreen: (s: string) => void;
   showSubs: boolean;
   setShowSubs: React.Dispatch<React.SetStateAction<boolean>>;
   showCur: boolean;
@@ -39,6 +38,8 @@ export function useApp() {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+
   const [match, setMatch] = useState<Match>(() => {
     const matches = loadMatches();
     return matches.length > 0 ? matches[0] : newMatchData();
@@ -48,12 +49,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const saved = loadLive();
     if (saved && saved.matchId === match.id && saved.state) return saved.state;
     return null;
-  });
-
-  const [screen, setScreenState] = useState<string>(() => {
-    const saved = loadLive();
-    if (saved && saved.matchId === match.id && saved.state) return 'live';
-    return 'setup';
   });
 
   const [showSubs, setShowSubs] = useState(() => { const s = loadLive(); return s?.showSubs || false; });
@@ -92,10 +87,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [liveState, match.id, showSubs, showCur, curTab, liveView]);
 
-  const setScreen = useCallback((s: string) => {
-    setScreenState(s);
-  }, []);
-
   const startLive = useCallback(() => {
     const doSort = match.sortOrder !== 'manual';
     const prep = (arr: Player[]) => {
@@ -114,14 +105,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLiveState(newLive);
     setShowSubs(false);
     setShowCur(false);
-    setScreen('live');
-  }, [match, setScreen]);
+    navigate('/ao-vivo');
+  }, [match, navigate]);
 
   const resetLive = useCallback(() => {
     if (!window.confirm('Reiniciar a transmissão? Substituições e eventos serão perdidos.')) return;
     setLiveState(null);
     clearLiveLS();
-    // Then start fresh
     setTimeout(() => startLive(), 0);
   }, [startLive]);
 
@@ -132,8 +122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const m = newMatchData();
     setMatch(m);
     saveMatchesToLS([m]);
-    setScreen('setup');
-  }, [setScreen]);
+    navigate('/escalacao');
+  }, [navigate]);
 
   const exportMatchFn = useCallback(() => {
     const name = `${match.teamA.name || 'TimeA'} x ${match.teamB.name || 'TimeB'}.json`;
@@ -157,7 +147,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           clearLiveLS();
           setMatch(parsed);
           saveMatchesToLS([parsed]);
-          setScreen('setup');
+          navigate('/escalacao');
         } else {
           alert('Arquivo inválido.');
         }
@@ -166,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
     reader.readAsText(file);
-  }, [setScreen]);
+  }, [navigate]);
 
   // beforeunload warning
   useEffect(() => {
@@ -182,7 +172,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      match, setMatch, liveState, setLiveState, screen, setScreen,
+      match, setMatch, liveState, setLiveState,
       showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab,
       liveView, setLiveView, saveMatch, saveLiveState,
       startLive, resetLive, newMatch: newMatchFn, exportMatch: exportMatchFn,

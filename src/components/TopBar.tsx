@@ -1,12 +1,15 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { loadLive } from '../data/store';
 
 export default function TopBar() {
-  const { screen, setScreen, liveState, startLive, savedIndicator } = useApp();
+  const { liveState, startLive, savedIndicator } = useApp();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const path = location.pathname;
 
   const goLive = () => {
     if (liveState) {
-      setScreen('live');
+      navigate('/ao-vivo');
     } else {
       startLive();
     }
@@ -38,13 +41,13 @@ export default function TopBar() {
       </div>
 
       <div style={{ display: 'flex', gap: 4 }}>
-        <NavBtn active={screen === 'setup'} onClick={() => setScreen('setup')}>📋 ESCALAÇÃO</NavBtn>
-        <NavBtn active={screen === 'notes'} onClick={() => setScreen('notes')}>📝 NOTAS</NavBtn>
+        <NavBtn active={path === '/' || path === '/escalacao'} onClick={() => navigate('/escalacao')}>📋 ESCALAÇÃO</NavBtn>
+        <NavBtn active={path === '/notas'} onClick={() => navigate('/notas')}>📝 NOTAS</NavBtn>
         <button
           onClick={goLive}
           style={{
-            background: screen === 'live' ? 'rgba(255,61,61,0.2)' : 'rgba(255,61,61,0.1)',
-            border: `1px solid ${screen === 'live' ? 'var(--red)' : 'rgba(255,61,61,0.3)'}`,
+            background: path === '/ao-vivo' ? 'rgba(255,61,61,0.2)' : 'rgba(255,61,61,0.1)',
+            border: `1px solid ${path === '/ao-vivo' ? 'var(--red)' : 'rgba(255,61,61,0.3)'}`,
             color: 'var(--red)', fontSize: 11, fontWeight: 600, letterSpacing: 1,
             padding: '8px 18px', borderRadius: 6, cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
