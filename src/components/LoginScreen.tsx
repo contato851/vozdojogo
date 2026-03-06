@@ -4,16 +4,16 @@ import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
-  const { user, loading, signIn, signUp } = useAuth();
-
-  if (loading) return null;
-  if (user) return <Navigate to="/escalacao" replace />;
+  const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to="/escalacao" replace />;
 
   const doAction = async () => {
     if (!email || !password) {
