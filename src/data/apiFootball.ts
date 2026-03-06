@@ -1,16 +1,8 @@
 import { Player } from './types';
 
-const API_KEY_STORAGE = 'vdj-api-football-key';
+const API_KEY = '76323e8a785b9405b7c311d10f76a969';
 const TEAM_ID_CACHE = 'vdj-api-football-ids';
 const BASE_URL = 'https://v3.football.api-sports.io';
-
-export function getApiKey(): string {
-  return localStorage.getItem(API_KEY_STORAGE) || '';
-}
-
-export function setApiKey(key: string) {
-  localStorage.setItem(API_KEY_STORAGE, key.trim());
-}
 
 function getTeamIdCache(): Record<string, number> {
   try {
@@ -23,14 +15,11 @@ function setTeamIdCache(cache: Record<string, number>) {
 }
 
 async function apiFetch(endpoint: string, params: Record<string, string>) {
-  const key = getApiKey();
-  if (!key) throw new Error('Chave da API não configurada');
-
   const url = new URL(`${BASE_URL}/${endpoint}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const res = await fetch(url.toString(), {
-    headers: { 'x-apisports-key': key }
+    headers: { 'x-apisports-key': API_KEY }
   });
 
   if (res.status === 403) throw new Error('Chave da API inválida');
