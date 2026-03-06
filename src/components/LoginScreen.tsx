@@ -1,8 +1,6 @@
 import { useState, useRef } from 'react';
-import { useApp } from '../context/AppContext';
 
 export default function LoginScreen() {
-  const { setScreen } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

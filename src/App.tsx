@@ -1,26 +1,30 @@
-import { useState, useEffect } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
 import TopBar from './components/TopBar';
 import LoginScreen from './components/LoginScreen';
 import SetupScreen from './components/SetupScreen';
 import NotesScreen from './components/NotesScreen';
 import LiveScreen from './components/LiveScreen';
+import NotFound from './pages/NotFound';
 
-function AppContent() {
-  const { screen } = useApp();
-
+function AppLayout() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
       <TopBar />
-      {screen === 'setup' && <SetupScreen />}
-      {screen === 'notes' && <NotesScreen />}
-      {screen === 'live' && <LiveScreen />}
+      <Routes>
+        <Route path="/" element={<SetupScreen />} />
+        <Route path="/escalacao" element={<SetupScreen />} />
+        <Route path="/notas" element={<NotesScreen />} />
+        <Route path="/ao-vivo" element={<LiveScreen />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </div>
   );
 }
 
 function AppShell() {
-  const [loggedIn, setLoggedIn] = useState(() => {
+  const [loggedIn] = useState(() => {
     try {
       const s = localStorage.getItem('vdj-session');
       if (s) { const p = JSON.parse(s); return !!(p && p.email); }
@@ -28,18 +32,17 @@ function AppShell() {
     return false;
   });
 
-  if (!loggedIn) {
-    return (
-      <AppProvider>
-        <LoginScreen />
-      </AppProvider>
-    );
-  }
-
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <BrowserRouter>
+      <AppProvider>
+        {loggedIn ? <AppLayout /> : (
+          <Routes>
+            <Route path="/login" element={<LoginScreen />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        )}
+      </AppProvider>
+    </BrowserRouter>
   );
 }
 
