@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_teams: {
+        Row: {
+          abbreviation: string
+          accent: string
+          color: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          players: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abbreviation?: string
+          accent?: string
+          color?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          players?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abbreviation?: string
+          accent?: string
+          color?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          players?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       live_broadcasts: {
         Row: {
           created_at: string
