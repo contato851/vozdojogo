@@ -156,22 +156,16 @@ export default function LiveScreen() {
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 12 }}>
         {/* Score */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 16, gap: 10 }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 34, fontWeight: 700, letterSpacing: 2, lineHeight: 1.1, color: tA.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {tA.name}
-            </div>
-            <LiveTeamLogo teamName={tA.name} size={38} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 20 }}>
+            <LiveTeamLogo teamName={tA.name} size={64} />
           </div>
           <div style={{ flexShrink: 0 }}>
             <span style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, background: 'var(--bg3)', padding: '4px 22px', borderRadius: 8, letterSpacing: 4, display: 'inline-block', border: '1px solid var(--border)' }}>
               {goalsA}<span style={{ color: 'var(--text3)', fontSize: 32, margin: '0 6px' }}>×</span>{goalsB}
             </span>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 16, gap: 10 }}>
-            <LiveTeamLogo teamName={tB.name} size={38} />
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 34, fontWeight: 700, letterSpacing: 2, lineHeight: 1.1, color: tB.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {tB.name}
-            </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 20 }}>
+            <LiveTeamLogo teamName={tB.name} size={64} />
           </div>
         </div>
 
