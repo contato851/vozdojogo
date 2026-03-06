@@ -23,8 +23,9 @@ export function useSubscription() {
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // TODO: remover bypass após testes
+  const [subscribed, setSubscribed] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [gracePeriod, setGracePeriod] = useState(false);
   const [graceDaysRemaining, setGraceDaysRemaining] = useState(0);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
