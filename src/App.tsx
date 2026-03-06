@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SubscriptionProvider, useSubscription } from './context/SubscriptionContext';
 import { OnboardingProvider } from './context/OnboardingContext';
@@ -33,16 +33,19 @@ function LoadingScreen() {
 }
 
 function AppLayout() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  let content;
+  if (path === '/notas') content = <NotesScreen />;
+  else if (path === '/ao-vivo') content = <LiveScreen />;
+  else content = <SetupScreen />;
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
       <TopBar />
       <GraceBanner />
-      <Routes>
-        <Route path="/escalacao" element={<SetupScreen />} />
-        <Route path="/notas" element={<NotesScreen />} />
-        <Route path="/ao-vivo" element={<LiveScreen />} />
-        <Route path="*" element={<Navigate to="/escalacao" replace />} />
-      </Routes>
+      {content}
     </div>
   );
 }
