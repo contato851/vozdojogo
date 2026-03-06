@@ -33,16 +33,19 @@ function LoadingScreen() {
 }
 
 function AppLayout() {
+  const location = useLocation();
+  const path = location.pathname;
+
+  let content;
+  if (path === '/notas') content = <NotesScreen />;
+  else if (path === '/ao-vivo') content = <LiveScreen />;
+  else content = <SetupScreen />;
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
       <TopBar />
       <GraceBanner />
-      <Routes>
-        <Route path="/escalacao" element={<SetupScreen />} />
-        <Route path="/notas" element={<NotesScreen />} />
-        <Route path="/ao-vivo" element={<LiveScreen />} />
-        <Route path="*" element={<Navigate to="/escalacao" replace />} />
-      </Routes>
+      {content}
     </div>
   );
 }
