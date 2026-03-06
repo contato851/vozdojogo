@@ -21,8 +21,8 @@ export function newMatchData(): Match {
     createdAt: new Date().toISOString(),
     stadium: '', referee: '', assistant1: '', assistant2: '', var_ref: '', reporter: '', commentators: '',
     sortOrder: 'number',
-    teamA: { name: 'TIME A', coach: '', color: '#0a5c36', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'a-s'), reserves: makeEmpty(12, 'a-r'), curiosities: '' },
-    teamB: { name: 'TIME B', coach: '', color: '#cc0000', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'b-s'), reserves: makeEmpty(12, 'b-r'), curiosities: '' },
+    teamA: { name: 'TIME A', coach: '', color: '#0a5c36', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'a-s'), reserves: makeEmpty(12, 'a-r'), unlisted: [], curiosities: '' },
+    teamB: { name: 'TIME B', coach: '', color: '#cc0000', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'b-s'), reserves: makeEmpty(12, 'b-r'), unlisted: [], curiosities: '' },
   };
 }
 
