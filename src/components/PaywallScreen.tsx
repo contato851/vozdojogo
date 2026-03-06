@@ -16,7 +16,7 @@ export default function PaywallScreen() {
         <div style={{
           color: 'var(--text2)', fontSize: 13, marginBottom: 32, letterSpacing: 1
         }}>
-          FERRAMENTA PROFISSIONAL PARA NARRADORES ESPORTIVOS
+          FERRAMENTA PROFISSIONAL PARA NARRADORES
         </div>
 
         <div style={{
