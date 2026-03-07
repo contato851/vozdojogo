@@ -37,11 +37,6 @@ export default function SetupScreen() {
       .toLowerCase()
       .trim();
 
-  const findSavedTeamByName = (teamName: string): CustomTeam | undefined => {
-    const normalized = normalizeTeamName(teamName);
-    return customTeams.find(ct => normalizeTeamName(ct.name) === normalized);
-  };
-
   const buildLineupFromPlayers = (
     tk: 'teamA' | 'teamB',
     players: { number: string; name: string }[]
