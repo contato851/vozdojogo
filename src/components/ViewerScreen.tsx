@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export default function ViewerScreen() {
   const { shareCode } = useParams<{ shareCode: string }>();
