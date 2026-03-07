@@ -4,7 +4,7 @@ import Logo from '../Logo';
 const benefits = [
   { emoji: '⚽', title: 'Monte a escalação em segundos', desc: 'Selecione o time, preencha os jogadores e pronto.' },
   { emoji: '📊', title: 'Campo tático interativo', desc: 'Arraste os jogadores no campo. Veja a formação em tempo real.' },
-  { emoji: '🔴', title: 'Controle total ao vivo', desc: 'Gols, cartões, substituições e cronômetro. Tudo persiste.' },
+  { emoji: '🔴', title: 'Controle total ao vivo', desc: 'Gols, cartões, substituições e cronômetro. Tudo com um clique.' },
 ];
 
 export default function LandingPage() {
