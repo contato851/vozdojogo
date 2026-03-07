@@ -332,9 +332,6 @@ export default function SetupScreen() {
               transition: 'all .2s', position: 'relative'
             }}
           >
-            {fetchingSquad === 'teamA' && (
-              <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 10, color: 'var(--green)' }}>⏳ Buscando...</div>
-            )}
             {match.teamA.name ? (
               <>
                 <LiveTeamLogo teamName={match.teamA.name} size={56} />
