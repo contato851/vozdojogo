@@ -248,8 +248,57 @@ export default function SetupScreen() {
   const teamsSelected = teamASelected && teamBSelected;
   const noTeamSelected = !teamASelected && !teamBSelected;
 
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return !localStorage.getItem('vdj-tutorial-dismissed'); } catch { return true; }
+  });
+  const dismissTutorial = () => {
+    setShowTutorial(false);
+    try { localStorage.setItem('vdj-tutorial-dismissed', '1'); } catch { /* ignore */ }
+  };
+
   return (
     <div style={{ animation: 'fadeUp .3s ease-out' }}>
+
+      {/* === TUTORIAL VIDEO BANNER === */}
+      {showTutorial && (
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          padding: '0', marginBottom: 14, overflow: 'hidden', position: 'relative'
+        }}>
+          <button
+            onClick={dismissTutorial}
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 2,
+              background: 'rgba(0,0,0,0.5)', border: 'none', color: 'var(--text2)',
+              width: 28, height: 28, borderRadius: '50%', cursor: 'pointer',
+              fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            title="Fechar"
+          >✕</button>
+          {/* Replace the placeholder below with your YouTube/Vimeo embed */}
+          {/* Example: <iframe src="https://www.youtube.com/embed/VIDEO_ID" style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="autoplay; fullscreen" /> */}
+          <div style={{
+            width: '100%', aspectRatio: '16/9', maxHeight: 280,
+            background: 'linear-gradient(135deg, var(--bg3), var(--bg2))',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10
+          }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', background: 'var(--green)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(0, 255, 135, 0.3)', cursor: 'pointer'
+            }}>
+              <span style={{ fontSize: 24, color: 'var(--bg)', marginLeft: 3 }}>▶</span>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-head)', fontSize: 12, color: 'var(--text2)',
+              letterSpacing: 2, textTransform: 'uppercase'
+            }}>
+              APRENDA A USAR O VOZ DO JOGO
+            </span>
+          </div>
+        </div>
+      )}
+
 
       {/* === EMPTY STATE === */}
       {noTeamSelected && (
