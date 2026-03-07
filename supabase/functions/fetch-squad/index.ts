@@ -64,7 +64,7 @@ async function fetchFirecrawlContext(teamName: string, firecrawlApiKey: string):
       },
       body: JSON.stringify({
         query: `${teamName} elenco atual jogadores site:ogol.com.br OR site:transfermarkt.com OR site:ge.globo.com OR site:espn.com.br`,
-        limit: 3,
+        limit: 5,
         scrapeOptions: {
           formats: ["markdown"],
         },
@@ -82,10 +82,40 @@ async function fetchFirecrawlContext(teamName: string, firecrawlApiKey: string):
 
     if (!results.length) return null;
 
-    const best = results.find((item: any) => item?.markdown)?.markdown;
-    if (!best || typeof best !== "string") return null;
+    const normalizedTeam = teamName
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
 
-    return best.slice(0, 4500);
+    const best = results
+      .map((item: any) => {
+        const title = String(item?.title ?? "");
+        const url = String(item?.url ?? "");
+        const description = String(item?.description ?? "");
+        const markdown = String(item?.markdown ?? "");
+
+        const searchable = `${title} ${url} ${description} ${markdown.slice(0, 1500)}`
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+
+        let score = 0;
+        if (searchable.includes(normalizedTeam)) score += 5;
+        if (/elenco|squad|jogadores|plantel/.test(searchable)) score += 2;
+        if (/ogol|transfermarkt|ge\.globo|espn/.test(searchable)) score += 1;
+
+        return { markdown, url, score };
+      })
+      .filter((item: any) => item.markdown && item.markdown.length > 300)
+      .sort((a: any, b: any) => b.score - a.score)[0];
+
+    if (!best || best.score < 3) {
+      console.log("Firecrawl context ignored due low relevance for", teamName);
+      return null;
+    }
+
+    console.log("Firecrawl context source:", best.url, "score:", best.score);
+    return best.markdown.slice(0, 4500);
   } catch (error) {
     console.error("Firecrawl context error:", error);
     return null;
