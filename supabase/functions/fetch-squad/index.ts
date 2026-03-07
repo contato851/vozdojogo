@@ -17,14 +17,6 @@ type RawSquad = {
   coach?: string;
 };
 
-function normalizeText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
 function normalizeName(name: string): string {
   return name
     .replace(/\s*\([^)]*\)\s*/g, " ")
@@ -37,8 +29,7 @@ function normalizeName(name: string): string {
 function sanitizeNumber(value: unknown): string {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
-  const digitsOnly = raw.replace(/[^\d]/g, "");
-  return digitsOnly.slice(0, 3);
+  return raw.replace(/[^\d]/g, "").slice(0, 3);
 }
 
 function sanitizePlayers(players: RawPlayer[] | undefined, prefix: "s" | "r", limit: number) {
@@ -63,24 +54,65 @@ function sanitizePlayers(players: RawPlayer[] | undefined, prefix: "s" | "r", li
     }));
 }
 
-function isUsableSquad(squad: RawSquad | null): boolean {
-  if (!squad) return false;
+async function fetchFirecrawlContext(teamName: string, firecrawlApiKey: string): Promise<string | null> {
+  try {
+    const response = await fetch("https://api.firecrawl.dev/v1/search", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${firecrawlApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: `${teamName} elenco atual jogadores site:ogol.com.br OR site:transfermarkt.com OR site:ge.globo.com OR site:espn.com.br`,
+        limit: 3,
+        scrapeOptions: {
+          formats: ["markdown"],
+        },
+      }),
+    });
 
-  const starters = Array.isArray(squad.starters) ? squad.starters : [];
-  const reserves = Array.isArray(squad.reserves) ? squad.reserves : [];
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Firecrawl search error:", response.status, errText);
+      return null;
+    }
 
-  const namedStarters = starters.filter((p) => String(p?.name ?? "").trim().length >= 2);
-  const namedReserves = reserves.filter((p) => String(p?.name ?? "").trim().length >= 2);
+    const data = await response.json();
+    const results = Array.isArray(data?.data) ? data.data : [];
 
-  return namedStarters.length >= 8 || namedReserves.length >= 10;
+    if (!results.length) return null;
+
+    const best = results.find((item: any) => item?.markdown)?.markdown;
+    if (!best || typeof best !== "string") return null;
+
+    return best.slice(0, 4500);
+  } catch (error) {
+    console.error("Firecrawl context error:", error);
+    return null;
+  }
 }
 
 async function callAiForSquad(params: {
   lovableApiKey: string;
-  model: string;
-  systemPrompt: string;
-  userPrompt: string;
+  teamName: string;
+  today: string;
+  context: string | null;
 }): Promise<RawSquad> {
+  const systemPrompt = `Você é especialista em futebol e precisa retornar o elenco atual de um time.
+
+Data atual: ${params.today}.
+
+REGRAS:
+- Retorne SEMPRE 11 titulares e até 12 reservas (não retorne vazio)
+- Use o contexto web quando disponível; se o contexto for insuficiente, use seu melhor conhecimento atualizado
+- "name": somente nome do jogador em MAIÚSCULAS
+- "number": somente dígitos em string (se desconhecido, string vazia)
+- "coach": nome do técnico atual`;
+
+  const userPrompt = params.context
+    ? `Time: ${params.teamName}\n\nContexto web:\n${params.context}`
+    : `Retorne o elenco atual do time: ${params.teamName}`;
+
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -88,29 +120,27 @@ async function callAiForSquad(params: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: params.model,
+      model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: params.systemPrompt },
-        { role: "user", content: params.userPrompt },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
       tools: [
         {
           type: "function",
           function: {
             name: "return_squad",
-            description:
-              "Return the squad of a football team with starters, reserves, and coach.",
+            description: "Return squad with starters, reserves and coach",
             parameters: {
               type: "object",
               properties: {
                 starters: {
                   type: "array",
-                  description: "11 starting players",
                   items: {
                     type: "object",
                     properties: {
-                      number: { type: "string", description: "Jersey number" },
-                      name: { type: "string", description: "Player name in UPPERCASE" },
+                      number: { type: "string" },
+                      name: { type: "string" },
                     },
                     required: ["number", "name"],
                     additionalProperties: false,
@@ -118,18 +148,17 @@ async function callAiForSquad(params: {
                 },
                 reserves: {
                   type: "array",
-                  description: "Reserve players (up to 12)",
                   items: {
                     type: "object",
                     properties: {
-                      number: { type: "string", description: "Jersey number" },
-                      name: { type: "string", description: "Player name in UPPERCASE" },
+                      number: { type: "string" },
+                      name: { type: "string" },
                     },
                     required: ["number", "name"],
                     additionalProperties: false,
                   },
                 },
-                coach: { type: "string", description: "Head coach full name" },
+                coach: { type: "string" },
               },
               required: ["starters", "reserves", "coach"],
               additionalProperties: false,
@@ -156,89 +185,11 @@ async function callAiForSquad(params: {
     throw new Error("AI did not return squad data");
   }
 
-  const rawArgs = toolCall.function.arguments;
-  if (typeof rawArgs === "string") {
-    return JSON.parse(rawArgs) as RawSquad;
-  }
-
-  if (typeof rawArgs === "object" && rawArgs !== null) {
-    return rawArgs as RawSquad;
-  }
+  const args = toolCall.function.arguments;
+  if (typeof args === "string") return JSON.parse(args) as RawSquad;
+  if (typeof args === "object" && args) return args as RawSquad;
 
   throw new Error("Invalid AI tool payload");
-}
-
-async function getFirecrawlContext(teamName: string, firecrawlApiKey: string): Promise<string | null> {
-  try {
-    const query = `${teamName} elenco atual jogadores site:ogol.com.br OR site:transfermarkt.com OR site:ge.globo.com OR site:espn.com.br`;
-
-    const response = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query,
-        limit: 5,
-        scrapeOptions: {
-          formats: ["markdown"],
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Firecrawl search error:", response.status, errText);
-      return null;
-    }
-
-    const data = await response.json();
-    const results = Array.isArray(data?.data) ? data.data : [];
-
-    if (results.length === 0) {
-      console.log("Firecrawl returned no search results");
-      return null;
-    }
-
-    const normalizedTeam = normalizeText(teamName);
-
-    const scoredResults = results
-      .map((result: any) => {
-        const url = String(result?.url ?? "");
-        const title = String(result?.title ?? "");
-        const description = String(result?.description ?? "");
-        const markdown = String(result?.markdown ?? result?.content ?? "");
-
-        const indexText = normalizeText(`${url} ${title} ${description} ${markdown.slice(0, 2000)}`);
-
-        let score = 0;
-        if (indexText.includes(normalizedTeam)) score += 4;
-        if (/ogol|transfermarkt|ge\.globo|espn/.test(indexText)) score += 2;
-        if (/elenco|squad|jogadores|plantel/.test(indexText)) score += 1;
-
-        return { url, title, markdown, score };
-      })
-      .filter((result: any) => result.markdown && result.markdown.length > 100)
-      .sort((a: any, b: any) => b.score - a.score)
-      .slice(0, 2);
-
-    if (scoredResults.length === 0) {
-      console.log("Firecrawl returned results but no usable markdown");
-      return null;
-    }
-
-    console.log("Firecrawl usable sources:", scoredResults.map((r: any) => r.url));
-
-    const context = scoredResults
-      .map((result: any) => `--- FONTE: ${result.url} ---\n${result.markdown.slice(0, 7000)}`)
-      .join("\n\n");
-
-    return context.slice(0, 14000);
-  } catch (error) {
-    console.error("Firecrawl context error:", error);
-    return null;
-  }
 }
 
 serve(async (req) => {
@@ -248,6 +199,7 @@ serve(async (req) => {
 
   try {
     const { teamName } = await req.json();
+
     if (!teamName) {
       return new Response(JSON.stringify({ error: "teamName is required" }), {
         status: 400,
@@ -263,48 +215,21 @@ serve(async (req) => {
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     const today = new Date().toISOString().split("T")[0];
 
-    let squad: RawSquad | null = null;
-    let source: "web" | "ai" = "ai";
+    const context = FIRECRAWL_API_KEY
+      ? await fetchFirecrawlContext(teamName, FIRECRAWL_API_KEY)
+      : null;
 
-    if (FIRECRAWL_API_KEY) {
-      const webContext = await getFirecrawlContext(teamName, FIRECRAWL_API_KEY);
+    const rawSquad = await callAiForSquad({
+      lovableApiKey: LOVABLE_API_KEY,
+      teamName,
+      today,
+      context,
+    });
 
-      if (webContext) {
-        try {
-          squad = await callAiForSquad({
-            lovableApiKey: LOVABLE_API_KEY,
-            model: "google/gemini-3-pro-preview",
-            systemPrompt: `Você é um analista tático de futebol que EXTRAI elenco de textos reais.\n\nData atual: ${today}.\n\nREGRAS:\n- Use apenas jogadores citados nas fontes\n- Retorne 11 titulares + até 12 reservas\n- Nomes em MAIÚSCULAS e sem extras\n- number deve ser só dígitos em string\n- Se não houver número explícito, use string vazia\n- Técnico: nome do treinador atual que aparecer nas fontes\n- Se houver conflito entre fontes, priorize a fonte mais recente`,
-            userPrompt: `Extraia o elenco atual do ${teamName} usando APENAS o conteúdo abaixo:\n\n${webContext}`,
-          });
+    let starters = sanitizePlayers(rawSquad?.starters, "s", 11);
+    let reserves = sanitizePlayers(rawSquad?.reserves, "r", 12);
 
-          if (isUsableSquad(squad)) {
-            source = "web";
-          } else {
-            console.log("Web extraction returned low-confidence squad, falling back to AI knowledge");
-            squad = null;
-          }
-        } catch (error) {
-          console.error("Web extraction AI step failed:", error);
-          squad = null;
-        }
-      }
-    }
-
-    if (!isUsableSquad(squad)) {
-      squad = await callAiForSquad({
-        lovableApiKey: LOVABLE_API_KEY,
-        model: "google/gemini-2.5-pro",
-        systemPrompt: `Você é especialista em futebol com foco em elencos atuais.\n\nData atual: ${today}.\n\nREGRAS:\n- Retorne o elenco mais atualizado possível\n- 11 titulares + até 12 reservas\n- Nomes em MAIÚSCULAS, curtos e sem duplicação\n- number apenas dígitos em string\n- Técnico: nome completo`,
-        userPrompt: `Retorne o elenco atual do time: ${teamName}`,
-      });
-
-      source = "ai";
-    }
-
-    let starters = sanitizePlayers(squad?.starters, "s", 11);
-    let reserves = sanitizePlayers(squad?.reserves, "r", 12);
-
+    // If starters came short, fill from reserves so the UI always has a full base lineup
     if (starters.length < 11 && reserves.length > 0) {
       const starterNames = new Set(starters.map((p) => p.name));
       const fillers = reserves.filter((p) => !starterNames.has(p.name)).slice(0, 11 - starters.length);
@@ -317,18 +242,23 @@ serve(async (req) => {
     const finalStarterNames = new Set(starters.map((p) => p.name));
     reserves = reserves.filter((p) => !finalStarterNames.has(p.name)).slice(0, 12);
 
-    const coach = String(squad?.coach ?? "").trim();
+    const coach = String(rawSquad?.coach ?? "").trim();
 
-    console.log("Squad result:", {
+    console.log("fetch-squad result", {
       teamName,
-      source,
+      source: context ? "web+ai" : "ai",
       starters: starters.length,
       reserves: reserves.length,
-      hasCoach: Boolean(coach),
+      coach: Boolean(coach),
     });
 
     return new Response(
-      JSON.stringify({ starters, reserves, coach, source }),
+      JSON.stringify({
+        starters,
+        reserves,
+        coach,
+        source: context ? "web+ai" : "ai",
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
