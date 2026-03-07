@@ -483,17 +483,35 @@ export default function SetupScreen() {
                   </div>
 
                   {/* Colors row */}
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>COR</span>
-                      <input type="color" value={team.color} onChange={e => updateTeam(tk, 'color', e.target.value)}
-                        style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>DESTAQUE</span>
-                      <input type="color" value={team.accent} onChange={e => updateTeam(tk, 'accent', e.target.value)}
-                        style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
-                    </label>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>COR</span>
+                        <input type="color" value={team.color} onChange={e => updateTeam(tk, 'color', e.target.value)}
+                          style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>DESTAQUE</span>
+                        <input type="color" value={team.accent} onChange={e => updateTeam(tk, 'accent', e.target.value)}
+                          style={{ width: 28, height: 28, border: 'none', borderRadius: 4, cursor: 'pointer', background: 'transparent' }} />
+                      </label>
+                    </div>
+
+                    {hasTeam && (
+                      <button
+                        onClick={() => handleSaveLineup(tk)}
+                        className="btn-ghost"
+                        style={{
+                          fontSize: 10,
+                          padding: '5px 10px',
+                          opacity: savingLineup === tk ? 0.7 : 1,
+                          cursor: savingLineup === tk ? 'wait' : 'pointer'
+                        }}
+                        disabled={savingLineup === tk}
+                      >
+                        {savingLineup === tk ? '💾 Salvando...' : '💾 Salvar elenco'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Titulares - live style with number badges */}
