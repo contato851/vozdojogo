@@ -22,7 +22,7 @@ export default function CreateAccount() {
 
   const sessionId = searchParams.get('session_id');
 
-  // Fetch email from Stripe checkout session
+  // Fetch email from Stripe checkout session with retry
   useEffect(() => {
     if (!sessionId) {
       setFetchingEmail(false);
@@ -30,35 +30,64 @@ export default function CreateAccount() {
       return;
     }
 
+    let retryCount = 0;
+    const maxRetries = 5;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
     const fetchEmail = async () => {
       try {
+        console.log(`[CreateAccount] Fetching checkout email, attempt ${retryCount + 1}, session_id: ${sessionId}`);
         const { data, error } = await supabase.functions.invoke('retrieve-checkout-email', {
           body: { session_id: sessionId },
         });
 
+        if (cancelled) return;
+
+        console.log('[CreateAccount] Response:', JSON.stringify(data), 'Error:', error);
+
         if (error) throw error;
 
         if (data?.error === 'payment_not_completed') {
-          setErrors({ general: 'Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.' });
+          retryCount++;
+          if (retryCount < maxRetries) {
+            console.log(`[CreateAccount] Payment not completed yet, retrying in ${retryCount * 2}s...`);
+            timeoutId = setTimeout(fetchEmail, retryCount * 2000);
+            return;
+          }
+          setErrors({ general: 'Pagamento ainda não confirmado. Aguarde alguns instantes e recarregue a página.' });
+          setFetchingEmail(false);
           return;
         }
 
         if (data?.email) {
+          console.log('[CreateAccount] Email retrieved:', data.email);
           setEmail(data.email);
           setStripeCustomerId(data.stripe_customer_id || '');
           setUserExists(data.user_exists || false);
         } else {
           setErrors({ general: 'Não foi possível recuperar o e-mail do pagamento.' });
         }
+        setFetchingEmail(false);
       } catch (err: any) {
+        if (cancelled) return;
         console.error('Error fetching checkout email:', err);
-        setErrors({ general: 'Erro ao verificar pagamento. Tente novamente.' });
-      } finally {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          timeoutId = setTimeout(fetchEmail, retryCount * 2000);
+          return;
+        }
+        setErrors({ general: 'Erro ao verificar pagamento. Tente recarregar a página.' });
         setFetchingEmail(false);
       }
     };
 
     fetchEmail();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [sessionId]);
 
   const validate = () => {
