@@ -1,5 +1,16 @@
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTeamLogo } from '../hooks/useTeamLogo';
 
+function NoteTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
+  const { logoUrl } = useTeamLogo(teamName, false);
+  const [err, setErr] = useState(false);
+  if (!logoUrl || err) return null;
+  return (
+    <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
+      style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
+  );
+}
 export default function NotesScreen() {
   const { match, setMatch } = useApp();
 
