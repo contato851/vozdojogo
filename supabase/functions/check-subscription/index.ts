@@ -12,6 +12,21 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${d}`);
 };
 
+function safeTimestamp(value: any): Date | null {
+  if (!value && value !== 0) return null;
+  // Stripe returns Unix timestamps (seconds)
+  if (typeof value === 'number') {
+    const d = new Date(value * 1000);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // DB returns ISO strings
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,7 +61,6 @@ serve(async (req) => {
       .maybeSingle();
 
     if (bc) {
-      // Check subscriptions table
       const { data: subs } = await supabase
         .from("subscriptions")
         .select("*")
@@ -60,8 +74,8 @@ serve(async (req) => {
         let graceDaysRemaining = 0;
 
         if (gracePeriod && sub.current_period_end) {
-          const periodEnd = new Date(sub.current_period_end);
-          if (!isNaN(periodEnd.getTime())) {
+          const periodEnd = safeTimestamp(sub.current_period_end);
+          if (periodEnd) {
             const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
             graceDaysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
             
@@ -75,7 +89,7 @@ serve(async (req) => {
           }
         }
 
-        logStep("Subscription found", { status: sub.status, access: sub.access_granted });
+        logStep("Subscription found in DB", { status: sub.status, access: sub.access_granted });
         return new Response(JSON.stringify({
           subscribed: sub.access_granted,
           subscription_end: sub.current_period_end ?? null,
@@ -89,64 +103,73 @@ serve(async (req) => {
       }
     }
 
-    // Fallback: check Stripe directly (for cases where webhook hasn't fired yet)
+    logStep("No DB records, checking Stripe API");
+
+    // Fallback: check Stripe directly
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      logStep("No customer found");
+      logStep("No Stripe customer found");
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const customerId = customers.data[0].id;
+    logStep("Found Stripe customer", { customerId });
+
     const activeSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
+    logStep("Active subs query done", { count: activeSubs.data.length });
 
     if (activeSubs.data.length > 0) {
       const sub = activeSubs.data[0];
-      const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+      const periodEnd = safeTimestamp(sub.current_period_end);
+      const subscriptionEnd = periodEnd ? periodEnd.toISOString() : null;
+      logStep("Active sub found", { end: subscriptionEnd, rawEnd: sub.current_period_end });
       
       // Sync to DB
-      const { data: existingBC } = await supabase
-        .from("billing_customers")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .maybeSingle();
-
-      let bcId: string;
-      if (existingBC) {
-        bcId = existingBC.id;
-        await supabase.from("billing_customers").update({ auth_user_id: user.id }).eq("id", bcId);
-      } else {
-        const { data: newBC } = await supabase
+      try {
+        const { data: existingBC } = await supabase
           .from("billing_customers")
-          .insert({ email: user.email, stripe_customer_id: customerId, auth_user_id: user.id })
           .select("id")
-          .single();
-        bcId = newBC!.id;
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        let bcId: string;
+        if (existingBC) {
+          bcId = existingBC.id;
+          await supabase.from("billing_customers").update({ auth_user_id: user.id }).eq("id", bcId);
+        } else {
+          const { data: newBC } = await supabase
+            .from("billing_customers")
+            .insert({ email: user.email, stripe_customer_id: customerId, auth_user_id: user.id })
+            .select("id")
+            .single();
+          bcId = newBC!.id;
+        }
+
+        const priceId = sub.items?.data?.[0]?.price?.id || null;
+        const { data: existingSub } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("stripe_subscription_id", sub.id)
+          .maybeSingle();
+
+        if (!existingSub) {
+          await supabase.from("subscriptions").insert({
+            billing_customer_id: bcId,
+            stripe_subscription_id: sub.id,
+            stripe_price_id: priceId,
+            status: sub.status,
+            access_granted: true,
+            current_period_end: subscriptionEnd,
+          });
+        }
+      } catch (syncErr) {
+        logStep("DB sync error (non-fatal)", { message: String(syncErr) });
       }
 
-      // Sync subscription
-      const priceId = sub.items.data[0]?.price?.id || null;
-      const { data: existingSub } = await supabase
-        .from("subscriptions")
-        .select("id")
-        .eq("stripe_subscription_id", sub.id)
-        .maybeSingle();
-
-      if (!existingSub) {
-        await supabase.from("subscriptions").insert({
-          billing_customer_id: bcId,
-          stripe_subscription_id: sub.id,
-          stripe_price_id: priceId,
-          status: sub.status,
-          access_granted: true,
-          current_period_end: subscriptionEnd,
-        });
-      }
-
-      logStep("Active subscription via Stripe API", { end: subscriptionEnd });
       return new Response(JSON.stringify({
         subscribed: true,
         subscription_end: subscriptionEnd,
@@ -161,19 +184,21 @@ serve(async (req) => {
     const pastDueSubs = await stripe.subscriptions.list({ customer: customerId, status: "past_due", limit: 1 });
     if (pastDueSubs.data.length > 0) {
       const sub = pastDueSubs.data[0];
-      const periodEnd = new Date(sub.current_period_end * 1000);
-      const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const daysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+      const periodEnd = safeTimestamp(sub.current_period_end);
+      if (periodEnd) {
+        const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const daysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 
-      if (daysRemaining > 0) {
-        return new Response(JSON.stringify({
-          subscribed: true,
-          subscription_end: graceEnd.toISOString(),
-          grace_period: true,
-          grace_days_remaining: daysRemaining,
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        if (daysRemaining > 0) {
+          return new Response(JSON.stringify({
+            subscribed: true,
+            subscription_end: graceEnd.toISOString(),
+            grace_period: true,
+            grace_days_remaining: daysRemaining,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
     }
 
