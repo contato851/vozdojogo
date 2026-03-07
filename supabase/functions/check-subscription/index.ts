@@ -61,23 +61,24 @@ serve(async (req) => {
 
         if (gracePeriod && sub.current_period_end) {
           const periodEnd = new Date(sub.current_period_end);
-          const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
-          graceDaysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
-          
-          if (graceDaysRemaining <= 0) {
-            // Grace period expired
-            await supabase.from("subscriptions").update({ access_granted: false }).eq("id", sub.id);
-            logStep("Grace period expired");
-            return new Response(JSON.stringify({ subscribed: false, grace_period: false, grace_days_remaining: 0 }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+          if (!isNaN(periodEnd.getTime())) {
+            const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
+            graceDaysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+            
+            if (graceDaysRemaining <= 0) {
+              await supabase.from("subscriptions").update({ access_granted: false }).eq("id", sub.id);
+              logStep("Grace period expired");
+              return new Response(JSON.stringify({ subscribed: false, grace_period: false, grace_days_remaining: 0 }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              });
+            }
           }
         }
 
         logStep("Subscription found", { status: sub.status, access: sub.access_granted });
         return new Response(JSON.stringify({
           subscribed: sub.access_granted,
-          subscription_end: sub.current_period_end,
+          subscription_end: sub.current_period_end ?? null,
           grace_period: gracePeriod,
           grace_days_remaining: graceDaysRemaining,
           status: sub.status,
