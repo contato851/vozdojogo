@@ -26,6 +26,7 @@ export default function SetupScreen() {
   const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
+  const squadRequestVersion = useRef<{ teamA: number; teamB: number }>({ teamA: 0, teamB: 0 });
 
   const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number) => {
     dragItem.current = { tk, type, idx };
@@ -124,6 +125,9 @@ export default function SetupScreen() {
   };
 
   const selectTeam = async (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
+    const requestVersion = squadRequestVersion.current[tk] + 1;
+    squadRequestVersion.current[tk] = requestVersion;
+
     setMatch(m => ({
       ...m,
       [tk]: { ...m[tk], name: team.name, color: team.color, accent: team.accent }
@@ -148,21 +152,39 @@ export default function SetupScreen() {
 
     setFetchingSquad(tk);
     setSquadError(null);
+
     try {
       const result = await fetchSquad(team.name);
-      setMatch(m => ({
-        ...m,
-        [tk]: {
-          ...m[tk],
-          starters: result.starters,
-          reserves: result.reserves,
-          ...(result.coach ? { coach: result.coach } : {})
+
+      // Ignore outdated responses when user changes the team quickly
+      if (squadRequestVersion.current[tk] !== requestVersion) {
+        return;
+      }
+
+      setMatch(m => {
+        // Extra protection: only apply lineup if this slot is still the same team
+        if (m[tk].name !== team.name) {
+          return m;
         }
-      }));
+
+        return {
+          ...m,
+          [tk]: {
+            ...m[tk],
+            starters: result.starters,
+            reserves: result.reserves,
+            ...(result.coach ? { coach: result.coach } : {})
+          }
+        };
+      });
     } catch (err: any) {
-      setSquadError(`${team.name}: ${err.message || 'Erro ao buscar elenco'}`);
+      if (squadRequestVersion.current[tk] === requestVersion) {
+        setSquadError(`${team.name}: ${err.message || 'Erro ao buscar elenco'}`);
+      }
     } finally {
-      setFetchingSquad(null);
+      if (squadRequestVersion.current[tk] === requestVersion) {
+        setFetchingSquad(null);
+      }
     }
   };
 
