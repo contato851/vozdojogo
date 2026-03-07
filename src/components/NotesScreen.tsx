@@ -36,14 +36,18 @@ export default function NotesScreen() {
                 borderTop: `3px solid ${t.color}`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 7, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', background: t.color
-                  }}>
-                    <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)', color: t.accent }}>
-                      {(t.name || 'T').charAt(0)}
-                    </span>
-                  </div>
+                  <NoteTeamLogo teamName={t.name} size={38} />
+                  {/* Fallback letter if no logo */}
+                  {!t.name && (
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 7, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', background: t.color
+                    }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)', color: t.accent }}>
+                        {(t.name || 'T').charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>{t.name || 'TIME'}</div>
                     <div style={{ fontSize: 10, color: 'var(--text3)' }}>Curiosidades e anotações</div>
