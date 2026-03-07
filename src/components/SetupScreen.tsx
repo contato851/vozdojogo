@@ -2,10 +2,10 @@ import { useState, useRef } from 'react';
 import Logo from './Logo';
 import { useApp } from '../context/AppContext';
 import { FORMATIONS, FORMATION_KEYS } from '../data/formations';
-import { loadLive } from '../data/store';
-import { fetchSquad } from '../data/apiFootball';
+import { loadLive, makeEmpty } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 import TeamPicker from './TeamPicker';
+import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
 
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
   const { logoUrl } = useTeamLogo(teamName, false);
