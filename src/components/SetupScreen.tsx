@@ -402,14 +402,14 @@ export default function SetupScreen() {
         )}
       </div>
 
-      {/* Squad error */}
-      {squadError && (
+      {/* Lineup error */}
+      {lineupError && (
         <div style={{
           background: 'rgba(255,61,61,0.1)', border: '1px solid rgba(255,61,61,0.3)',
           borderRadius: 'var(--radius)', padding: '8px 14px', marginBottom: 14,
           fontSize: 12, color: 'var(--red)', textAlign: 'center'
         }}>
-          {squadError}
+          {lineupError}
         </div>
       )}
 
