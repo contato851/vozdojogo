@@ -17,7 +17,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
+  const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { persistSession: false } }
@@ -32,12 +32,63 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });
 
+    // Check billing_customers table first (webhook-populated)
+    const { data: bc } = await supabase
+      .from("billing_customers")
+      .select("id, stripe_customer_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (bc) {
+      // Check subscriptions table
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("billing_customer_id", bc.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (subs && subs.length > 0) {
+        const sub = subs[0];
+        const gracePeriod = sub.status === "past_due";
+        let graceDaysRemaining = 0;
+
+        if (gracePeriod && sub.current_period_end) {
+          const periodEnd = new Date(sub.current_period_end);
+          const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
+          graceDaysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+          
+          if (graceDaysRemaining <= 0) {
+            // Grace period expired
+            await supabase.from("subscriptions").update({ access_granted: false }).eq("id", sub.id);
+            logStep("Grace period expired");
+            return new Response(JSON.stringify({ subscribed: false, grace_period: false, grace_days_remaining: 0 }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
+        logStep("Subscription found", { status: sub.status, access: sub.access_granted });
+        return new Response(JSON.stringify({
+          subscribed: sub.access_granted,
+          subscription_end: sub.current_period_end,
+          grace_period: gracePeriod,
+          grace_days_remaining: graceDaysRemaining,
+          status: sub.status,
+          stripe_price_id: sub.stripe_price_id,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Fallback: check Stripe directly (for cases where webhook hasn't fired yet)
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
@@ -45,22 +96,56 @@ serve(async (req) => {
       logStep("No customer found");
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       });
     }
 
     const customerId = customers.data[0].id;
-    logStep("Found customer", { customerId });
-
-    // Check active subscriptions
-    const activeSubs = await stripe.subscriptions.list({
-      customer: customerId, status: "active", limit: 1,
-    });
+    const activeSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
 
     if (activeSubs.data.length > 0) {
       const sub = activeSubs.data[0];
       const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { end: subscriptionEnd });
+      
+      // Sync to DB
+      const { data: existingBC } = await supabase
+        .from("billing_customers")
+        .select("id")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
+
+      let bcId: string;
+      if (existingBC) {
+        bcId = existingBC.id;
+        await supabase.from("billing_customers").update({ auth_user_id: user.id }).eq("id", bcId);
+      } else {
+        const { data: newBC } = await supabase
+          .from("billing_customers")
+          .insert({ email: user.email, stripe_customer_id: customerId, auth_user_id: user.id })
+          .select("id")
+          .single();
+        bcId = newBC!.id;
+      }
+
+      // Sync subscription
+      const priceId = sub.items.data[0]?.price?.id || null;
+      const { data: existingSub } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("stripe_subscription_id", sub.id)
+        .maybeSingle();
+
+      if (!existingSub) {
+        await supabase.from("subscriptions").insert({
+          billing_customer_id: bcId,
+          stripe_subscription_id: sub.id,
+          stripe_price_id: priceId,
+          status: sub.status,
+          access_granted: true,
+          current_period_end: subscriptionEnd,
+        });
+      }
+
+      logStep("Active subscription via Stripe API", { end: subscriptionEnd });
       return new Response(JSON.stringify({
         subscribed: true,
         subscription_end: subscriptionEnd,
@@ -68,26 +153,18 @@ serve(async (req) => {
         grace_days_remaining: 0,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       });
     }
 
-    // Check past_due subscriptions (grace period)
-    const pastDueSubs = await stripe.subscriptions.list({
-      customer: customerId, status: "past_due", limit: 1,
-    });
-
+    // Check past_due
+    const pastDueSubs = await stripe.subscriptions.list({ customer: customerId, status: "past_due", limit: 1 });
     if (pastDueSubs.data.length > 0) {
       const sub = pastDueSubs.data[0];
-      // Grace period: 7 days from when it became past_due
       const periodEnd = new Date(sub.current_period_end * 1000);
-      const graceDays = 7;
-      const graceEnd = new Date(periodEnd.getTime() + graceDays * 24 * 60 * 60 * 1000);
-      const now = new Date();
-      const daysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+      const graceEnd = new Date(periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const daysRemaining = Math.max(0, Math.ceil((graceEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
 
       if (daysRemaining > 0) {
-        logStep("Grace period active", { daysRemaining });
         return new Response(JSON.stringify({
           subscribed: true,
           subscription_end: graceEnd.toISOString(),
@@ -95,19 +172,13 @@ serve(async (req) => {
           grace_days_remaining: daysRemaining,
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
         });
       }
     }
 
     logStep("No active subscription");
-    return new Response(JSON.stringify({
-      subscribed: false,
-      grace_period: false,
-      grace_days_remaining: 0,
-    }), {
+    return new Response(JSON.stringify({ subscribed: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

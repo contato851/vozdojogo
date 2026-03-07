@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
 
@@ -29,14 +29,14 @@ export default function LoginScreen() {
     setSubmitting(true);
     setMsg(null);
 
-    const { error } = isSignUp ? await signUp(email, password) : await signIn(email, password);
+    const { error } = await signIn(email, password);
 
     if (error) {
       setMsg({ text: error, type: 'error' });
       setShake(true);
       setTimeout(() => setShake(false), 400);
     } else {
-      setMsg({ text: isSignUp ? '✓ Conta criada com sucesso!' : '✓ Login realizado!', type: 'success' });
+      setMsg({ text: '✓ Login realizado!', type: 'success' });
     }
     setSubmitting(false);
   };
@@ -99,18 +99,7 @@ export default function LoginScreen() {
             transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
-          {submitting ? (isSignUp ? 'CRIANDO...' : 'ENTRANDO...') : (isSignUp ? 'CRIAR CONTA' : 'ENTRAR')}
-        </button>
-
-        <button
-          onClick={() => { setIsSignUp(!isSignUp); setMsg(null); }}
-          style={{
-            marginTop: 16, background: 'none', border: 'none', color: 'var(--text2)',
-            fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)',
-            textDecoration: 'underline', transition: 'color .2s'
-          }}
-        >
-          {isSignUp ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta'}
+          {submitting ? 'ENTRANDO...' : 'ENTRAR'}
         </button>
 
         {msg && (
@@ -121,6 +110,30 @@ export default function LoginScreen() {
             {msg.text}
           </div>
         )}
+
+        {/* CTA for non-subscribers */}
+        <div style={{
+          marginTop: 32, padding: '20px 16px', background: 'var(--bg2)',
+          border: '1px solid var(--border)', borderRadius: 8
+        }}>
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
+            Ainda não tem acesso?
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              width: '100%', padding: 12, background: 'none',
+              border: '2px solid var(--green)', color: 'var(--green)',
+              fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-head)',
+              borderRadius: 8, cursor: 'pointer', letterSpacing: 1,
+              transition: 'all .2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--green)'; e.currentTarget.style.color = 'var(--bg)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--green)'; }}
+          >
+            ASSINAR POR R$14,90/MÊS
+          </button>
+        </div>
       </div>
     </div>
   );

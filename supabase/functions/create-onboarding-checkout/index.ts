@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,11 +22,15 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
-    const origin = req.headers.get("origin") || "https://id-preview--c8e504a9-a02c-4e9e-a957-cb635ee3d575.lovable.app";
+    const origin = req.headers.get("origin") || "https://vozdojogo.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       line_items: [{ price: "price_1T7pmNEWAPfn7MGYh3NVG3Qc", quantity: 1 }],
@@ -34,7 +39,14 @@ serve(async (req) => {
       cancel_url: `${origin}/onboarding/resumo`,
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    logStep("Checkout session created", { sessionId: session.id });
+
+    // Save checkout session to DB for tracking
+    await supabase.from("checkout_sessions").insert({
+      stripe_checkout_session_id: session.id,
+      email: "pending",
+      status: "pending",
+    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

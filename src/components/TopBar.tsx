@@ -57,6 +57,18 @@ export default function TopBar() {
           <span style={{ fontSize: 9, color: 'var(--green)', letterSpacing: 1, transition: 'opacity .3s' }}>✓ Salvo</span>
         )}
         <button
+          onClick={() => navigate('/configuracoes')}
+          style={{
+            background: 'none', border: '1px solid var(--border)', color: 'var(--text3)',
+            fontSize: 10, padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
+            fontFamily: 'var(--font-body)', transition: 'all .2s'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--green)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+        >
+          ⚙️ Config
+        </button>
+        <button
           onClick={doLogout}
           style={{
             background: 'none', border: '1px solid var(--border)', color: 'var(--text3)',

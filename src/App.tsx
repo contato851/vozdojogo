@@ -11,6 +11,7 @@ import SetupScreen from './components/SetupScreen';
 import NotesScreen from './components/NotesScreen';
 import LiveScreen from './components/LiveScreen';
 import ViewerScreen from './components/ViewerScreen';
+import SettingsScreen from './components/SettingsScreen';
 import NotFound from './pages/NotFound';
 
 // Onboarding components
@@ -63,6 +64,19 @@ function SubscriptionGate() {
   );
 }
 
+function ProtectedSettings() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  return (
+    <SubscriptionProvider>
+      <SettingsScreen />
+    </SubscriptionProvider>
+  );
+}
+
 function ProtectedApp() {
   const { user, loading } = useAuth();
 
@@ -112,6 +126,9 @@ function AppShell() {
             <Route path="/onboarding/resumo" element={<ProfileSummary />} />
             <Route path="/onboarding/criar-conta" element={<CreateAccount />} />
             <Route path="/onboarding/primeiro-jogo" element={<FirstGameWizard />} />
+
+            {/* Settings - auth required */}
+            <Route path="/configuracoes" element={<ProtectedSettings />} />
 
             {/* App routes - auth + subscription required */}
             <Route path="/escalacao" element={<ProtectedApp />} />
