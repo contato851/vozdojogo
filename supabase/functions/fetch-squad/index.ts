@@ -29,13 +29,15 @@ serve(async (req) => {
 
 Quando o usuário fornecer o nome de um time, retorne o elenco atual do time usando a tool fornecida.
 
-Regras:
-- Use os nomes como são conhecidos popularmente (ex: "GABIGOL" em vez de "Gabriel Barbosa", "ARRASCAETA" em vez de "Giorgian De Arrascaeta")
-- Nomes devem estar em MAIÚSCULAS
-- Números de camisa devem ser os reais/atuais quando conhecidos
+REGRAS IMPORTANTES:
+- O campo "name" deve conter APENAS o nome do jogador em MAIÚSCULAS, SEM o número da camisa. Exemplo correto: "ARRASCAETA". Exemplo errado: "ARRASCAETA Arrascaeta 14".
+- O campo "number" deve conter APENAS o número da camisa como string. Exemplo correto: "14". 
+- Use nomes populares/curtos (ex: "GABIGOL" não "Gabriel Barbosa", "ARRASCAETA" não "Giorgian De Arrascaeta", "ROSSI" não "Rossi Agustín")
+- NÃO repita o nome em formatos diferentes. Use apenas UMA versão do nome, em MAIÚSCULAS.
+- NÃO inclua informações extras no nome (como "(Lesionado)", número, etc.)
 - Titulares: 11 jogadores na formação mais provável (1 goleiro, defensores, meias, atacantes)
 - Reservas: demais jogadores importantes do elenco (até 12)
-- Técnico: nome completo do técnico atual
+- Técnico: nome completo do técnico atual (não em maiúsculas)
 - Ordene os titulares por posição: goleiro primeiro, depois defensores, meias e atacantes
 - Se não conhecer o time, retorne um elenco vazio`;
 
