@@ -28,6 +28,7 @@ export default function SetupScreen() {
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
   const { teams: customTeams, saveTeam, refetch: refetchCustomTeams } = useCustomTeams();
+  const { findByTeamName: findSavedLineup, saveLineup, refetch: refetchLineups } = useSavedLineups();
 
   const normalizeTeamName = (name: string) =>
     name
