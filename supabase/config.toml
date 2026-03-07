@@ -2,3 +2,9 @@ project_id = "ltxdrvhntfbxcxywdcxy"
 
 [functions.create-onboarding-checkout]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.retrieve-checkout-email]
+verify_jwt = false

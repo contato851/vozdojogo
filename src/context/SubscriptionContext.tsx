@@ -8,6 +8,7 @@ interface SubscriptionState {
   gracePeriod: boolean;
   graceDaysRemaining: number;
   subscriptionEnd: string | null;
+  subscriptionStatus: string | null;
   checkSubscription: () => Promise<void>;
   startCheckout: () => Promise<void>;
   openPortal: () => Promise<void>;
@@ -23,16 +24,35 @@ export function useSubscription() {
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  // TODO: remover bypass após testes
-  const [subscribed, setSubscribed] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [gracePeriod, setGracePeriod] = useState(false);
   const [graceDaysRemaining, setGraceDaysRemaining] = useState(0);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
 
   const checkSubscription = useCallback(async () => {
-    // TODO: remover bypass após testes — mantém subscribed=true sempre
-    return;
+    if (!user) {
+      setSubscribed(false);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw error;
+
+      setSubscribed(data?.subscribed ?? false);
+      setGracePeriod(data?.grace_period ?? false);
+      setGraceDaysRemaining(data?.grace_days_remaining ?? 0);
+      setSubscriptionEnd(data?.subscription_end ?? null);
+      setSubscriptionStatus(data?.status ?? null);
+    } catch (err) {
+      console.error('Check subscription error:', err);
+      setSubscribed(false);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -69,7 +89,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   return (
     <SubscriptionContext.Provider value={{
       subscribed, loading, gracePeriod, graceDaysRemaining,
-      subscriptionEnd, checkSubscription, startCheckout, openPortal
+      subscriptionEnd, subscriptionStatus, checkSubscription, startCheckout, openPortal
     }}>
       {children}
     </SubscriptionContext.Provider>
