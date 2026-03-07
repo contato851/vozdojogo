@@ -7,6 +7,7 @@ import { useIsMobile } from '../hooks/use-mobile';
 
 export default function ViewerScreen() {
   const { shareCode } = useParams<{ shareCode: string }>();
+  const isMobile = useIsMobile();
   const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [matchData, setMatchData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
