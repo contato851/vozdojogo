@@ -4,6 +4,22 @@ import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
 import { useIsMobile } from '../hooks/use-mobile';
+import { useTeamLogo } from '../hooks/useTeamLogo';
+
+function ViewerTeamLogo({ teamName, size = 48 }: { teamName: string; size?: number }) {
+  const { logoUrl } = useTeamLogo(teamName, false);
+  const [err, setErr] = useState(false);
+  if (!logoUrl || err) return null;
+  return (
+    <img
+      src={logoUrl}
+      alt={teamName}
+      onError={() => setErr(true)}
+      style={{ width: size, height: size, objectFit: 'contain' }}
+      loading="lazy"
+    />
+  );
+}
 
 export default function ViewerScreen() {
   const { shareCode } = useParams<{ shareCode: string }>();
