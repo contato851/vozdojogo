@@ -6,6 +6,7 @@ import { loadLive, makeEmpty } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 import TeamPicker from './TeamPicker';
 import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
+import { useSavedLineups } from '../hooks/useSavedLineups';
 
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
   const { logoUrl } = useTeamLogo(teamName, false);
@@ -27,6 +28,7 @@ export default function SetupScreen() {
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
   const { teams: customTeams, saveTeam, refetch: refetchCustomTeams } = useCustomTeams();
+  const { findByTeamName: findSavedLineup, saveLineup, refetch: refetchLineups } = useSavedLineups();
 
   const normalizeTeamName = (name: string) =>
     name
@@ -34,11 +36,6 @@ export default function SetupScreen() {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
-
-  const findSavedTeamByName = (teamName: string): CustomTeam | undefined => {
-    const normalized = normalizeTeamName(teamName);
-    return customTeams.find(ct => normalizeTeamName(ct.name) === normalized);
-  };
 
   const buildLineupFromPlayers = (
     tk: 'teamA' | 'teamB',
@@ -187,8 +184,8 @@ export default function SetupScreen() {
       return;
     }
 
-    const savedLineupTeam = findSavedTeamByName(team.name);
-    const savedPlayers = savedLineupTeam?.players || [];
+    const savedLineup = findSavedLineup(team.name);
+    const savedPlayers = savedLineup?.players || [];
     const { starters, reserves } = buildLineupFromPlayers(tk, savedPlayers);
 
     setMatch(m => ({
@@ -226,34 +223,18 @@ export default function SetupScreen() {
       return;
     }
 
-    const existing = findSavedTeamByName(team.name);
-    const generatedAbbreviation = team.name
-      .split(/\s+/)
-      .map(word => word[0] || '')
-      .join('')
-      .slice(0, 4)
-      .toUpperCase() || team.name.slice(0, 3).toUpperCase();
-
     try {
       setSavingLineup(tk);
       setLineupError(null);
 
-      const saved = await saveTeam({
-        id: existing?.id,
-        name: team.name,
-        abbreviation: existing?.abbreviation || generatedAbbreviation,
-        color: team.color,
-        accent: team.accent,
-        logo_url: existing?.logo_url ?? null,
-        players,
-      });
+      const saved = await saveLineup(team.name, players);
 
       if (!saved) {
         throw new Error('Faça login para salvar o elenco.');
       }
 
-      await refetchCustomTeams();
-      alert(`Elenco de ${team.name} salvo com sucesso em "Meus Times".`);
+      await refetchLineups();
+      alert(`Elenco de ${team.name} salvo com sucesso!`);
     } catch (error: any) {
       setLineupError(error?.message || `Não foi possível salvar o elenco de ${team.name}.`);
     } finally {

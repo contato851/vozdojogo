@@ -140,6 +140,36 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_lineups: {
+        Row: {
+          created_at: string
+          id: string
+          players: Json
+          team_name: string
+          team_name_normalized: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          players?: Json
+          team_name: string
+          team_name_normalized: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          players?: Json
+          team_name?: string
+          team_name_normalized?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           access_granted: boolean
