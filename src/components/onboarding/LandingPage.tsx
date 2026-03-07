@@ -18,7 +18,7 @@ export default function LandingPage() {
     }}>
       <div style={{ maxWidth: 700, width: '100%', textAlign: 'center' }}>
         {/* Logo */}
-        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
           <Logo size="lg" />
         </div>
 
