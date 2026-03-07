@@ -1,5 +1,27 @@
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useTeamLogo } from '../hooks/useTeamLogo';
 
+function NoteTeamLogo({ teamName, color, accent, size = 38 }: { teamName: string; color: string; accent: string; size?: number }) {
+  const { logoUrl } = useTeamLogo(teamName, false);
+  const [err, setErr] = useState(false);
+  if (logoUrl && !err) {
+    return (
+      <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
+    );
+  }
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: 7, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', background: color, flexShrink: 0
+    }}>
+      <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)', color: accent }}>
+        {(teamName || 'T').charAt(0)}
+      </span>
+    </div>
+  );
+}
 export default function NotesScreen() {
   const { match, setMatch } = useApp();
 
@@ -25,14 +47,7 @@ export default function NotesScreen() {
                 borderTop: `3px solid ${t.color}`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 7, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', background: t.color
-                  }}>
-                    <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)', color: t.accent }}>
-                      {(t.name || 'T').charAt(0)}
-                    </span>
-                  </div>
+                  <NoteTeamLogo teamName={t.name} color={t.color} accent={t.accent} size={38} />
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>{t.name || 'TIME'}</div>
                     <div style={{ fontSize: 10, color: 'var(--text3)' }}>Curiosidades e anotações</div>
