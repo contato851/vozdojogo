@@ -184,8 +184,8 @@ export default function SetupScreen() {
       return;
     }
 
-    const savedLineupTeam = findSavedTeamByName(team.name);
-    const savedPlayers = savedLineupTeam?.players || [];
+    const savedLineup = findSavedLineup(team.name);
+    const savedPlayers = savedLineup?.players || [];
     const { starters, reserves } = buildLineupFromPlayers(tk, savedPlayers);
 
     setMatch(m => ({
