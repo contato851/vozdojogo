@@ -20,13 +20,54 @@ function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number
 export default function SetupScreen() {
   const { match, setMatch, liveState, startLive, resetLive, newMatch, exportMatch, importMatch } = useApp();
   const [pickerTeam, setPickerTeam] = useState<'teamA' | 'teamB' | null>(null);
-  const [fetchingSquad, setFetchingSquad] = useState<'teamA' | 'teamB' | null>(null);
-  const [squadError, setSquadError] = useState<string | null>(null);
+  const [savingLineup, setSavingLineup] = useState<'teamA' | 'teamB' | null>(null);
+  const [lineupError, setLineupError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
-  const squadRequestVersion = useRef<{ teamA: number; teamB: number }>({ teamA: 0, teamB: 0 });
+  const { teams: customTeams, saveTeam, refetch: refetchCustomTeams } = useCustomTeams();
+
+  const normalizeTeamName = (name: string) =>
+    name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+  const findSavedTeamByName = (teamName: string): CustomTeam | undefined => {
+    const normalized = normalizeTeamName(teamName);
+    return customTeams.find(ct => normalizeTeamName(ct.name) === normalized);
+  };
+
+  const buildLineupFromPlayers = (
+    tk: 'teamA' | 'teamB',
+    players: { number: string; name: string }[]
+  ) => {
+    const stamp = Date.now();
+    const normalizedPlayers = players
+      .map((p, idx) => ({
+        id: `${tk}-p-${stamp}-${idx}`,
+        number: String(p.number || ''),
+        name: String(p.name || '').trim().toUpperCase(),
+      }))
+      .filter(p => p.name);
+
+    const startersBase = normalizedPlayers.slice(0, 11);
+    const reservesBase = normalizedPlayers.slice(11, 23);
+
+    const starters = [
+      ...startersBase,
+      ...makeEmpty(Math.max(0, 11 - startersBase.length), `${tk}-s-fill-${stamp}`),
+    ].slice(0, 11);
+
+    const reserves = [
+      ...reservesBase,
+      ...makeEmpty(Math.max(0, 12 - reservesBase.length), `${tk}-r-fill-${stamp}`),
+    ].slice(0, 12);
+
+    return { starters, reserves };
+  };
 
   const handleDragStart = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number) => {
     dragItem.current = { tk, type, idx };
@@ -124,67 +165,99 @@ export default function SetupScreen() {
     });
   };
 
-  const selectTeam = async (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
-    const requestVersion = squadRequestVersion.current[tk] + 1;
-    squadRequestVersion.current[tk] = requestVersion;
-
-    setMatch(m => ({
-      ...m,
-      [tk]: { ...m[tk], name: team.name, color: team.color, accent: team.accent }
-    }));
+  const selectTeam = (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
     setPickerTeam(null);
+    setLineupError(null);
 
-    // If custom team with players, use those directly
     if (team.customPlayers && team.customPlayers.length > 0) {
-      const allPlayers = team.customPlayers.map((p, i) => ({
-        id: `cp-${Date.now()}-${i}`,
-        number: p.number || '',
-        name: p.name,
-      }));
-      const starters = allPlayers.slice(0, 11);
-      const reserves = allPlayers.slice(11);
+      const { starters, reserves } = buildLineupFromPlayers(tk, team.customPlayers);
       setMatch(m => ({
         ...m,
-        [tk]: { ...m[tk], starters, reserves }
+        [tk]: {
+          ...m[tk],
+          name: team.name,
+          color: team.color,
+          accent: team.accent,
+          starters,
+          reserves,
+          coach: '',
+          unlisted: [],
+        }
       }));
       return;
     }
 
-    setFetchingSquad(tk);
-    setSquadError(null);
+    const savedLineupTeam = findSavedTeamByName(team.name);
+    const savedPlayers = savedLineupTeam?.players || [];
+    const { starters, reserves } = buildLineupFromPlayers(tk, savedPlayers);
+
+    setMatch(m => ({
+      ...m,
+      [tk]: {
+        ...m[tk],
+        name: team.name,
+        color: team.color,
+        accent: team.accent,
+        starters,
+        reserves,
+        coach: '',
+        unlisted: [],
+      }
+    }));
+  };
+
+  const handleSaveLineup = async (tk: 'teamA' | 'teamB') => {
+    const team = match[tk];
+
+    if (!team.name || team.name === 'TIME A' || team.name === 'TIME B') {
+      setLineupError('Selecione um time antes de salvar o elenco.');
+      return;
+    }
+
+    const players = [...team.starters, ...team.reserves]
+      .map(player => ({
+        number: String(player.number || '').trim(),
+        name: String(player.name || '').trim().toUpperCase(),
+      }))
+      .filter(player => player.name.length > 0);
+
+    if (players.length === 0) {
+      setLineupError(`Preencha pelo menos um jogador para salvar o elenco do ${team.name}.`);
+      return;
+    }
+
+    const existing = findSavedTeamByName(team.name);
+    const generatedAbbreviation = team.name
+      .split(/\s+/)
+      .map(word => word[0] || '')
+      .join('')
+      .slice(0, 4)
+      .toUpperCase() || team.name.slice(0, 3).toUpperCase();
 
     try {
-      const result = await fetchSquad(team.name);
+      setSavingLineup(tk);
+      setLineupError(null);
 
-      // Ignore outdated responses when user changes the team quickly
-      if (squadRequestVersion.current[tk] !== requestVersion) {
-        return;
-      }
-
-      setMatch(m => {
-        // Extra protection: only apply lineup if this slot is still the same team
-        if (m[tk].name !== team.name) {
-          return m;
-        }
-
-        return {
-          ...m,
-          [tk]: {
-            ...m[tk],
-            starters: result.starters,
-            reserves: result.reserves,
-            ...(result.coach ? { coach: result.coach } : {})
-          }
-        };
+      const saved = await saveTeam({
+        id: existing?.id,
+        name: team.name,
+        abbreviation: existing?.abbreviation || generatedAbbreviation,
+        color: team.color,
+        accent: team.accent,
+        logo_url: existing?.logo_url ?? null,
+        players,
       });
-    } catch (err: any) {
-      if (squadRequestVersion.current[tk] === requestVersion) {
-        setSquadError(`${team.name}: ${err.message || 'Erro ao buscar elenco'}`);
+
+      if (!saved) {
+        throw new Error('Faça login para salvar o elenco.');
       }
+
+      await refetchCustomTeams();
+      alert(`Elenco de ${team.name} salvo com sucesso em "Meus Times".`);
+    } catch (error: any) {
+      setLineupError(error?.message || `Não foi possível salvar o elenco de ${team.name}.`);
     } finally {
-      if (squadRequestVersion.current[tk] === requestVersion) {
-        setFetchingSquad(null);
-      }
+      setSavingLineup(null);
     }
   };
 
