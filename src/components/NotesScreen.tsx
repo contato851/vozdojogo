@@ -3,25 +3,34 @@ import { useApp } from '../context/AppContext';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 
 function NoteTeamLogo({ teamName, color, accent, size = 38 }: { teamName: string; color: string; accent: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName, false);
+  const { logoUrl, loading } = useTeamLogo(teamName, false);
   const [err, setErr] = useState(false);
+
   if (logoUrl && !err) {
     return (
-      <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
-        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
+      <div style={{
+        width: size, height: size, borderRadius: 7, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)',
+        overflow: 'hidden', flexShrink: 0
+      }}>
+        <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
+          style={{ width: size - 4, height: size - 4, objectFit: 'contain' }} />
+      </div>
     );
   }
+
   return (
     <div style={{
       width: size, height: size, borderRadius: 7, display: 'flex',
       alignItems: 'center', justifyContent: 'center', background: color, flexShrink: 0
     }}>
-      <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)', color: accent }}>
-        {(teamName || 'T').charAt(0)}
+      <span style={{ fontSize: size * 0.45, fontWeight: 700, fontFamily: 'var(--font-head)', color: accent }}>
+        {loading ? '…' : (teamName || 'T').charAt(0)}
       </span>
     </div>
   );
 }
+
 export default function NotesScreen() {
   const { match, setMatch } = useApp();
 
