@@ -5,9 +5,8 @@ interface LogoProps {
 }
 
 // Visible heights after trimming transparent padding
-const visibleHeights = { sm: 60, md: 90, lg: 180 };
-// Scale factor to compensate for ~60% transparent padding in original PNG
-const scale = 2.5;
+const visibleHeights = { sm: 50, md: 75, lg: 120 };
+const scale = 3.2;
 
 export default function Logo({ size = 'md' }: LogoProps) {
   const h = visibleHeights[size];
