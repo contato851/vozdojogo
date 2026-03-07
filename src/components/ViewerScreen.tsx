@@ -3,9 +3,11 @@ import { useParams } from 'react-router-dom';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export default function ViewerScreen() {
   const { shareCode } = useParams<{ shareCode: string }>();
+  const isMobile = useIsMobile();
   const [liveState, setLiveState] = useState<LiveState | null>(null);
   const [matchData, setMatchData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -97,28 +99,58 @@ export default function ViewerScreen() {
         background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '24px 20px', marginBottom: 14
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{
-              fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
-              letterSpacing: 3, color: teamA?.accent || 'var(--text)'
-            }}>
-              {teamA?.name || 'TIME A'}
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 20 }}>
+          <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isMobile ? (
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%', background: teamA?.color || 'var(--bg3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14,
+                  letterSpacing: 1, color: teamA?.accent || '#fff'
+                }}>
+                  {teamA?.name?.substring(0, 3).toUpperCase() || 'A'}
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
+                letterSpacing: 3, color: teamA?.accent || 'var(--text)'
+              }}>
+                {teamA?.name || 'TIME A'}
+              </div>
+            )}
           </div>
           <div style={{
-            fontFamily: 'var(--font-head)', fontSize: 52, fontWeight: 700,
-            color: 'var(--text)', letterSpacing: 4, minWidth: 120, textAlign: 'center'
+            fontFamily: 'var(--font-head)', fontSize: isMobile ? 40 : 52, fontWeight: 700,
+            color: 'var(--text)', letterSpacing: 4, minWidth: isMobile ? 80 : 120, textAlign: 'center'
           }}>
             {goalsA} × {goalsB}
           </div>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{
-              fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
-              letterSpacing: 3, color: teamB?.accent || 'var(--text)'
-            }}>
-              {teamB?.name || 'TIME B'}
-            </div>
+          <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isMobile ? (
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%', background: teamB?.color || 'var(--bg3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14,
+                  letterSpacing: 1, color: teamB?.accent || '#fff'
+                }}>
+                  {teamB?.name?.substring(0, 3).toUpperCase() || 'B'}
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
+                letterSpacing: 3, color: teamB?.accent || 'var(--text)'
+              }}>
+                {teamB?.name || 'TIME B'}
+              </div>
+            )}
           </div>
         </div>
       </div>
