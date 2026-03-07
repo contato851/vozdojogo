@@ -118,18 +118,7 @@ export default function ViewerScreen() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 20 }}>
           <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isMobile ? (
-              <div style={{
-                width: 48, height: 48, borderRadius: '50%', background: teamA?.color || 'var(--bg3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14,
-                  letterSpacing: 1, color: teamA?.accent || '#fff'
-                }}>
-                  {teamA?.name?.substring(0, 3).toUpperCase() || 'A'}
-                </span>
-              </div>
+              <ViewerTeamLogo teamName={teamA?.name || ''} size={56} />
             ) : (
               <div style={{
                 fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
@@ -147,18 +136,7 @@ export default function ViewerScreen() {
           </div>
           <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isMobile ? (
-              <div style={{
-                width: 48, height: 48, borderRadius: '50%', background: teamB?.color || 'var(--bg3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14,
-                  letterSpacing: 1, color: teamB?.accent || '#fff'
-                }}>
-                  {teamB?.name?.substring(0, 3).toUpperCase() || 'B'}
-                </span>
-              </div>
+              <ViewerTeamLogo teamName={teamB?.name || ''} size={56} />
             ) : (
               <div style={{
                 fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
