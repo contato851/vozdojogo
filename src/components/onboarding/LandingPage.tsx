@@ -58,6 +58,39 @@ export default function LandingPage() {
           ))}
         </div>
 
+        {/* Video teaser */}
+        <div style={{
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 16,
+          padding: '0', marginBottom: 40, overflow: 'hidden', maxWidth: 560,
+          marginLeft: 'auto', marginRight: 'auto'
+        }}>
+          {/* Replace the placeholder below with your YouTube/Vimeo embed */}
+          {/* Example: <iframe src="https://www.youtube.com/embed/VIDEO_ID" ... /> */}
+          <div style={{
+            position: 'relative', width: '100%', paddingBottom: '56.25%', /* 16:9 */
+            background: 'linear-gradient(135deg, var(--bg3), var(--bg2))',
+          }}>
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 12
+            }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: '50%', background: 'var(--green)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(0, 255, 135, 0.3)', cursor: 'pointer'
+              }}>
+                <span style={{ fontSize: 28, color: 'var(--bg)', marginLeft: 4 }}>▶</span>
+              </div>
+              <span style={{
+                fontFamily: 'var(--font-head)', fontSize: 13, color: 'var(--text2)',
+                letterSpacing: 2, textTransform: 'uppercase'
+              }}>
+                VEJA COMO FUNCIONA
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Social proof */}
         <p style={{
           fontSize: 12, color: 'var(--text3)', letterSpacing: 2,
