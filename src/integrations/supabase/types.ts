@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_customers: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checkout_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          status: string
+          stripe_checkout_session_id: string
+          stripe_customer_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+          stripe_checkout_session_id: string
+          stripe_customer_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          stripe_checkout_session_id?: string
+          stripe_customer_id?: string | null
+        }
+        Relationships: []
+      }
       custom_teams: {
         Row: {
           abbreviation: string
@@ -82,6 +139,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          access_granted: boolean
+          billing_customer_id: string
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          status: string
+          stripe_price_id: string | null
+          stripe_subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_granted?: boolean
+          billing_customer_id: string
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          status?: string
+          stripe_price_id?: string | null
+          stripe_subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_granted?: boolean
+          billing_customer_id?: string
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          status?: string
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_billing_customer_id_fkey"
+            columns: ["billing_customer_id"]
+            isOneToOne: false
+            referencedRelation: "billing_customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
