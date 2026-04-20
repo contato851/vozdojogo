@@ -29,7 +29,27 @@ export default function CopaLayout() {
   if (path === '/notas') content = <NotesScreen />;
   else if (path === '/ao-vivo') content = <LiveScreen />;
   else if (showPicker || !hasMatchLoaded) content = <CopaMatchPicker />;
-  else content = <SetupScreen onChangeMatch={() => setShowPicker(true)} />;
+  else content = (
+    <>
+      <div style={{
+        display: 'flex', justifyContent: 'flex-end', marginBottom: 12,
+      }}>
+        <button
+          onClick={() => setShowPicker(true)}
+          style={{
+            background: 'rgba(212,175,55,0.12)',
+            border: '1px solid rgba(212,175,55,0.5)',
+            color: '#d4af37', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+            padding: '6px 14px', borderRadius: 4, cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          🏆 Trocar partida da Copa
+        </button>
+      </div>
+      <SetupScreen />
+    </>
+  );
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 20px', minHeight: '100vh' }}>
