@@ -1,73 +1,166 @@
-# Welcome to your Lovable project
+# 🎙️ VOZ DO JOGO
 
-## Project info
+> Ferramenta profissional para narradores esportivos. Tudo que você precisa para narrar uma partida — escalação, substituições, cartões, gols e cronômetro — em uma única tela.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🌐 **Site:** [vozdojogo.app.br](https://vozdojogo.app.br)
+🎬 **Demo pública (sem cadastro):** [vozdojogo.app.br/demo](https://vozdojogo.app.br/demo)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 📸 Screenshots
 
-**Use Lovable**
+### Landing page
+![Landing page](docs/screenshot-landing.png)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Dashboard — Escalação
+![Dashboard](docs/screenshot-dashboard.png)
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Funcionalidades
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **📋 Escalação rápida** — selecione os times, preencha os jogadores e está pronto para narrar.
+- **⚽ Campo tático interativo** — arraste jogadores na formação e visualize a escalação em tempo real.
+- **🔴 Modo Ao Vivo** — registre gols, cartões, substituições e controle o cronômetro com um clique.
+- **📝 Notas da partida** — anote informações relevantes antes e durante o jogo.
+- **📡 Tela espelhada** — compartilhe o placar via QR Code/link com colegas de transmissão.
+- **🛡️ Times personalizados** — crie e salve times customizados com escudo, cores e elenco próprio.
+- **💾 Escalações salvas** — reutilize escalações entre partidas sem precisar redigitar.
+- **🔍 Busca de elenco real** — integração com API-Football para puxar elencos atualizados automaticamente.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🧱 Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**Frontend**
+- ⚛️ React 18 + TypeScript 5
+- ⚡ Vite 5
+- 🎨 Tailwind CSS 3 + shadcn/ui
+- 🛣️ React Router 6
+- 🧪 Vitest
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+**Backend (Lovable Cloud / Supabase)**
+- 🔐 Supabase Auth (e-mail + senha)
+- 🗄️ Postgres com Row-Level Security
+- ⚡ Edge Functions (Deno) para integração com Stripe e API-Football
+- 📡 Supabase Realtime para a tela espelhada ao vivo
 
-# Step 3: Install the necessary dependencies.
-npm i
+**Pagamentos**
+- 💳 Stripe Checkout + Customer Portal + Webhooks
+- 🔁 Período de carência configurável para falhas de pagamento
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🏗️ Arquitetura
+
+```
+src/
+├── components/         # UI (Setup, Live, Notes, Viewer, Settings, etc.)
+│   ├── onboarding/     # Fluxo de qualificação + checkout + criação de conta
+│   └── ui/             # shadcn primitives
+├── context/            # AuthContext, SubscriptionContext, AppContext, OnboardingContext
+├── data/               # Tipos, formações, store local, integração API-Football
+├── hooks/              # useCustomTeams, useSavedLineups, useTeamLogo, etc.
+└── integrations/
+    └── supabase/       # Cliente + tipos auto-gerados
+
+supabase/
+└── functions/
+    ├── check-subscription/        # Valida acesso (com período de carência)
+    ├── create-checkout/           # Checkout para usuários autenticados
+    ├── create-onboarding-checkout/# Checkout antes do cadastro (fluxo onboarding)
+    ├── customer-portal/           # Portal Stripe para gerir assinatura
+    ├── retrieve-checkout-email/   # Recupera e-mail pago para preencher cadastro
+    ├── stripe-webhook/            # Sincroniza eventos de billing
+    ├── link-billing-user/         # Vincula auth.user a billing_customer
+    └── fetch-squad/               # Proxy para API-Football
+```
+
+### Fluxo de acesso
+
+1. Usuário visita a landing → passa pelo **onboarding de qualificação**
+2. Faz **checkout no Stripe** (assinatura mensal)
+3. Após pagamento, é redirecionado para **criar conta** com o mesmo e-mail do checkout
+4. O `SubscriptionGate` valida o status via edge function `check-subscription` antes de liberar o dashboard
+5. Webhooks da Stripe mantêm o status de assinatura sincronizado em tempo real
+
+> A criação de contas públicas é bloqueada — só usuários com pagamento confirmado podem se cadastrar.
+
+---
+
+## 🚀 Como rodar localmente
+
+### Pré-requisitos
+- Node.js 18+
+- npm, pnpm ou bun
+
+### Instalação
+
+```bash
+# clone
+git clone <SEU_REPO_URL>
+cd voz-do-jogo
+
+# instale as dependências
+npm install
+
+# rode o dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+A app abre em `http://localhost:5173`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Variáveis de ambiente
 
-**Use GitHub Codespaces**
+O arquivo `.env` é gerenciado automaticamente pelo Lovable Cloud e contém:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_PUBLISHABLE_KEY=...
+VITE_SUPABASE_PROJECT_ID=...
+```
 
-## What technologies are used for this project?
+Para testes locais com backend próprio, configure essas variáveis apontando para o seu projeto Supabase.
 
-This project is built with:
+### Scripts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+npm run dev       # dev server com HMR
+npm run build     # build de produção
+npm run preview   # preview do build
+npm run test      # roda os testes (Vitest)
+npm run lint      # ESLint
+```
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 🧪 Modo demo
 
-## Can I connect a custom domain to my Lovable project?
+Para apresentar o produto sem precisar criar conta nem pagar, acesse:
 
-Yes, you can!
+```
+/demo
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Essa rota libera o dashboard completo com dados mockados em `localStorage`. Ideal para demos, testes e revisões.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## 🔒 Segurança
+
+- Todas as tabelas usam **Row-Level Security (RLS)**
+- Roles armazenadas em tabela separada (`user_roles`) com função `has_role` `SECURITY DEFINER`
+- Webhooks da Stripe validam assinatura via `STRIPE_WEBHOOK_SECRET`
+- Chaves privadas (Stripe, API-Football) armazenadas como secrets — nunca no código
+
+---
+
+## 📄 Licença
+
+Projeto proprietário © Voz do Jogo. Todos os direitos reservados.
+
+---
+
+## 🛠️ Desenvolvido com [Lovable](https://lovable.dev)
+
+Este projeto foi criado e é mantido com Lovable. Edições feitas aqui sincronizam automaticamente com o GitHub e vice-versa.
