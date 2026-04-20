@@ -113,6 +113,9 @@ function AppShell() {
               </AppProvider>
             } />
 
+            {/* Public demo route - no auth/subscription required */}
+            <Route path="/demo/*" element={<DemoLayout />} />
+
             {/* Landing page - redirects to app if already authenticated */}
             <Route path="/" element={<SmartLanding />} />
 
