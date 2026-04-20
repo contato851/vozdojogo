@@ -13,6 +13,7 @@ import LiveScreen from './components/LiveScreen';
 import ViewerScreen from './components/ViewerScreen';
 import SettingsScreen from './components/SettingsScreen';
 import NotFound from './pages/NotFound';
+import DemoLayout from './components/DemoLayout';
 
 // Onboarding components
 import LandingPage from './components/onboarding/LandingPage';
