@@ -13,6 +13,7 @@ import LiveScreen from './components/LiveScreen';
 import ViewerScreen from './components/ViewerScreen';
 import SettingsScreen from './components/SettingsScreen';
 import NotFound from './pages/NotFound';
+import DemoLayout from './components/DemoLayout';
 
 // Onboarding components
 import LandingPage from './components/onboarding/LandingPage';
@@ -111,6 +112,9 @@ function AppShell() {
                 <ViewerScreen />
               </AppProvider>
             } />
+
+            {/* Public demo route - no auth/subscription required */}
+            <Route path="/demo/*" element={<DemoLayout />} />
 
             {/* Landing page - redirects to app if already authenticated */}
             <Route path="/" element={<SmartLanding />} />
