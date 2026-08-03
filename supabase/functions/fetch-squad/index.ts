@@ -145,7 +145,8 @@ serve(async (req) => {
       .from("squad_overrides")
       .select("id, action, player_id, player_data")
       .eq("api_team_id", apiTeamId)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("status", "confirmed"); // 'suggested' overrides stay private to whoever created them
 
     const merged = applyOverrides(mapped, (overrides ?? []) as SquadOverrideRow[]);
 
@@ -167,6 +168,7 @@ serve(async (req) => {
       coach,
       source,
       resolvedTeamName,
+      apiTeamId,
     };
 
     if (mapping.needs_narrator_confirmation) {

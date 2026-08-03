@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.15"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -170,6 +195,50 @@ export type Database = {
         }
         Relationships: []
       }
+      squad_overrides: {
+        Row: {
+          action: string
+          api_team_id: number
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          player_data: Json | null
+          player_id: string | null
+          reason: string
+        }
+        Insert: {
+          action: string
+          api_team_id: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          player_data?: Json | null
+          player_id?: string | null
+          reason?: string
+        }
+        Update: {
+          action?: string
+          api_team_id?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          player_data?: Json | null
+          player_id?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "squad_overrides_api_team_id_fkey"
+            columns: ["api_team_id"]
+            isOneToOne: false
+            referencedRelation: "team_squads"
+            referencedColumns: ["api_team_id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           access_granted: boolean
@@ -216,6 +285,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_api_mappings: {
+        Row: {
+          api_football_team_id: number | null
+          api_football_team_name: string | null
+          app_team_name: string
+          confidence: string
+          id: string
+          needs_narrator_confirmation: boolean
+          updated_at: string
+        }
+        Insert: {
+          api_football_team_id?: number | null
+          api_football_team_name?: string | null
+          app_team_name: string
+          confidence?: string
+          id?: string
+          needs_narrator_confirmation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          api_football_team_id?: number | null
+          api_football_team_name?: string | null
+          app_team_name?: string
+          confidence?: string
+          id?: string
+          needs_narrator_confirmation?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_squads: {
+        Row: {
+          api_team_id: number
+          coach: string
+          created_at: string
+          fetched_at: string
+          id: string
+          players: Json
+          source: string
+          team_name: string
+          team_name_normalized: string
+          updated_at: string
+        }
+        Insert: {
+          api_team_id: number
+          coach?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          players?: Json
+          source?: string
+          team_name: string
+          team_name_normalized: string
+          updated_at?: string
+        }
+        Update: {
+          api_team_id?: number
+          coach?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          players?: Json
+          source?: string
+          team_name?: string
+          team_name_normalized?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
@@ -393,6 +531,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

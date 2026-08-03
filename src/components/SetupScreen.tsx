@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Logo from './Logo';
 import { useApp } from '../context/AppContext';
 import { FORMATIONS, FORMATION_KEYS } from '../data/formations';
@@ -7,7 +7,8 @@ import { useTeamLogo } from '../hooks/useTeamLogo';
 import TeamPicker from './TeamPicker';
 import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
 import { useSavedLineups } from '../hooks/useSavedLineups';
-import { fetchSquad } from '../data/apiFootball';
+import { useSquadOverrides } from '../hooks/useSquadOverrides';
+import { fetchSquad, checkTeamMapping } from '../data/apiFootball';
 
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
   const { logoUrl } = useTeamLogo(teamName, false);
@@ -32,6 +33,13 @@ export default function SetupScreen() {
   const [dropTarget, setDropTarget] = useState<{ tk: string; type: string; idx: number } | null>(null);
   const { teams: customTeams, saveTeam, refetch: refetchCustomTeams } = useCustomTeams();
   const { findByTeamName: findSavedLineup, saveLineup, refetch: refetchLineups } = useSavedLineups();
+  const { addPlayer: addPlayerOverride, deactivatePlayer: deactivatePlayerOverride } = useSquadOverrides();
+  const [apiTeamIds, setApiTeamIds] = useState<{ teamA: number | null; teamB: number | null }>({ teamA: null, teamB: null });
+  const [suggestedIds, setSuggestedIds] = useState<{ teamA: Set<string>; teamB: Set<string> }>({ teamA: new Set(), teamB: new Set() });
+  const [addPlayerForm, setAddPlayerForm] = useState<{ tk: 'teamA' | 'teamB'; number: string; name: string } | null>(null);
+  // squadMode: null while the narrator hasn't chosen yet (shows the choice step).
+  const [squadMode, setSquadMode] = useState<{ teamA: 'suggested' | 'manual' | null; teamB: 'suggested' | 'manual' | null }>({ teamA: null, teamB: null });
+  const [mappingInfo, setMappingInfo] = useState<{ teamA: { hasAutoSquad: boolean } | null; teamB: { hasAutoSquad: boolean } | null }>({ teamA: null, teamB: null });
 
   const normalizeTeamName = (name: string) =>
     name
@@ -165,9 +173,36 @@ export default function SetupScreen() {
     });
   };
 
+  // Covers teams that were already selected before this screen loaded (page reload,
+  // saved match) — otherwise mappingInfo would stay null forever and the choice
+  // step would hang on "Verificando...". Teams that already have players filled
+  // in are assumed already configured and skip straight to 'suggested' silently.
+  useEffect(() => {
+    (['teamA', 'teamB'] as const).forEach(tk => {
+      const team = match[tk];
+      if (!team.name || team.name === 'TIME A' || team.name === 'TIME B') return;
+      if (mappingInfo[tk] !== null) return;
+
+      checkTeamMapping(team.name).then(info => {
+        setMappingInfo(prev => (prev[tk] !== null ? prev : { ...prev, [tk]: info }));
+        setSquadMode(prev => {
+          if (prev[tk] !== null) return prev;
+          const alreadyHasPlayers = [...team.starters, ...team.reserves].some(p => p.name?.trim());
+          if (!info.hasAutoSquad || alreadyHasPlayers) {
+            return { ...prev, [tk]: info.hasAutoSquad ? 'suggested' : 'manual' };
+          }
+          return prev;
+        });
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match.teamA.name, match.teamB.name]);
+
   const selectTeam = (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
     setPickerTeam(null);
     setLineupError(null);
+    setApiTeamIds(ids => ({ ...ids, [tk]: null }));
+    setSuggestedIds(ids => ({ ...ids, [tk]: new Set() }));
 
     if (team.customPlayers && team.customPlayers.length > 0) {
       const { starters, reserves } = buildLineupFromPlayers(tk, team.customPlayers);
@@ -184,6 +219,9 @@ export default function SetupScreen() {
           unlisted: [],
         }
       }));
+      // Custom teams already come with their own roster — no automatic-vs-manual choice to make.
+      setMappingInfo(info => ({ ...info, [tk]: { hasAutoSquad: false } }));
+      setSquadMode(m => ({ ...m, [tk]: 'suggested' }));
       return;
     }
 
@@ -204,6 +242,15 @@ export default function SetupScreen() {
         unlisted: [],
       }
     }));
+
+    setSquadMode(m => ({ ...m, [tk]: null }));
+    setMappingInfo(info => ({ ...info, [tk]: null }));
+    checkTeamMapping(team.name).then(info => {
+      setMappingInfo(prev => ({ ...prev, [tk]: info }));
+      if (!info.hasAutoSquad) {
+        setSquadMode(prev => ({ ...prev, [tk]: 'manual' }));
+      }
+    });
   };
 
   const handleSaveLineup = async (tk: 'teamA' | 'teamB') => {
@@ -271,10 +318,74 @@ export default function SetupScreen() {
           unlisted: [],
         }
       }));
+      setApiTeamIds(ids => ({ ...ids, [tk]: result.apiTeamId }));
+      setSuggestedIds(ids => ({ ...ids, [tk]: new Set() }));
     } catch (error: any) {
       setSquadError(error?.message || `Não foi possível buscar o elenco de ${team.name}.`);
     } finally {
       setFetchingSquad(null);
+    }
+  };
+
+  const handleAddPlayer = async (tk: 'teamA' | 'teamB') => {
+    if (!addPlayerForm || addPlayerForm.tk !== tk) return;
+    const name = addPlayerForm.name.trim().toUpperCase();
+    const number = addPlayerForm.number.trim();
+    if (!name) return;
+
+    const localId = `override-pending-${Date.now()}`;
+
+    setMatch(m => {
+      const team = { ...m[tk] };
+      team.reserves = [...team.reserves, { id: localId, number, name }];
+      return { ...m, [tk]: team };
+    });
+    setSuggestedIds(ids => ({ ...ids, [tk]: new Set([...ids[tk], localId]) }));
+    setAddPlayerForm(null);
+
+    const apiTeamId = apiTeamIds[tk];
+    if (apiTeamId == null) {
+      setSquadError('Jogador adicionado só nesta tela — busque o elenco real primeiro pra isso virar uma sugestão salva.');
+      return;
+    }
+
+    try {
+      await addPlayerOverride(apiTeamId, { number, name });
+    } catch (error: any) {
+      setSquadError(error?.message || 'Não foi possível salvar a sugestão de jogador adicionado.');
+    }
+  };
+
+  const handleMarkInactive = async (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves', idx: number) => {
+    const team = match[tk];
+    const player = team[type][idx];
+    if (!player) return;
+
+    setMatch(m => {
+      const t = { ...m[tk] };
+      if (type === 'starters') {
+        const starters = [...t.starters];
+        starters[idx] = { ...starters[idx], number: '', name: '' };
+        t.starters = starters;
+      } else {
+        t.reserves = t.reserves.filter((_, i) => i !== idx);
+      }
+      return { ...m, [tk]: t };
+    });
+    setSuggestedIds(ids => {
+      const next = new Set(ids[tk]);
+      next.delete(player.id);
+      return { ...ids, [tk]: next };
+    });
+
+    const apiTeamId = apiTeamIds[tk];
+    const isApiPlayer = player.id.startsWith('af-') || player.id.startsWith('override-');
+    if (apiTeamId == null || !isApiPlayer) return;
+
+    try {
+      await deactivatePlayerOverride(apiTeamId, player.id);
+    } catch (error: any) {
+      setSquadError(error?.message || 'Não foi possível salvar a sugestão de jogador inativo.');
     }
   };
 
@@ -514,6 +625,7 @@ export default function SetupScreen() {
         {(['teamA', 'teamB'] as const).map(tk => {
           const team = match[tk];
           const hasTeam = !!team.name;
+          const isTeamSelected = hasTeam && team.name !== 'TIME A' && team.name !== 'TIME B';
           return (
             <div key={tk} style={{ flex: 1, minWidth: 0 }}>
               <div style={{
@@ -576,20 +688,22 @@ export default function SetupScreen() {
 
                     {hasTeam && (
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => handleFetchSquad(tk)}
-                          className="btn-ghost"
-                          style={{
-                            fontSize: 10,
-                            padding: '5px 10px',
-                            opacity: fetchingSquad === tk ? 0.7 : 1,
-                            cursor: fetchingSquad === tk ? 'wait' : 'pointer'
-                          }}
-                          disabled={fetchingSquad === tk}
-                          title="Busca o elenco atual na API-Football e preenche os campos abaixo"
-                        >
-                          {fetchingSquad === tk ? '🔍 Buscando...' : '🔍 Buscar elenco real'}
-                        </button>
+                        {squadMode[tk] !== 'manual' && (
+                          <button
+                            onClick={() => handleFetchSquad(tk)}
+                            className="btn-ghost"
+                            style={{
+                              fontSize: 10,
+                              padding: '5px 10px',
+                              opacity: fetchingSquad === tk ? 0.7 : 1,
+                              cursor: fetchingSquad === tk ? 'wait' : 'pointer'
+                            }}
+                            disabled={fetchingSquad === tk}
+                            title="Busca o elenco atual na API-Football e preenche os campos abaixo"
+                          >
+                            {fetchingSquad === tk ? '🔍 Buscando...' : '🔍 Buscar elenco real'}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleSaveLineup(tk)}
                           className="btn-ghost"
@@ -606,6 +720,58 @@ export default function SetupScreen() {
                       </div>
                     )}
                   </div>
+
+                  {/* Escolha: escalação sugerida x manual */}
+                  {isTeamSelected && squadMode[tk] === null && (
+                    <SquadSourceChoice
+                      mappingInfo={mappingInfo[tk]}
+                      onChoose={mode => {
+                        setSquadMode(m => ({ ...m, [tk]: mode }));
+                        if (mode === 'suggested') handleFetchSquad(tk);
+                      }}
+                    />
+                  )}
+                  {isTeamSelected && squadMode[tk] === 'manual' && mappingInfo[tk] && !mappingInfo[tk]!.hasAutoSquad && (
+                    <div style={{
+                      background: 'rgba(255,200,0,0.08)', border: '1px solid rgba(255,200,0,0.3)',
+                      borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 11, color: '#ffc800'
+                    }}>
+                      ⚠️ Elenco automático indisponível para este time — preencha manualmente abaixo.
+                    </div>
+                  )}
+
+                  {(!isTeamSelected || squadMode[tk] !== null) && <>
+                  {/* Adicionar jogador (sugestão de correção do elenco) */}
+                  {hasTeam && (
+                    <div style={{ marginBottom: 10 }}>
+                      {addPlayerForm?.tk === tk ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <Input
+                            value={addPlayerForm.number}
+                            onChange={v => setAddPlayerForm(f => f && { ...f, number: v })}
+                            placeholder="Nº"
+                            style={{ width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px', fontSize: 12 }}
+                          />
+                          <Input
+                            value={addPlayerForm.name}
+                            onChange={v => setAddPlayerForm(f => f && { ...f, name: v })}
+                            placeholder="Nome do jogador"
+                            style={{ flex: 1, padding: '6px 10px', fontSize: 12 }}
+                          />
+                          <button onClick={() => handleAddPlayer(tk)} className="btn-green" style={{ fontSize: 10, padding: '6px 10px', flexShrink: 0 }}>Adicionar</button>
+                          <button onClick={() => setAddPlayerForm(null)} className="btn-ghost" style={{ fontSize: 10, padding: '6px 10px', flexShrink: 0 }}>Cancelar</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setAddPlayerForm({ tk, number: '', name: '' })}
+                          className="btn-ghost"
+                          style={{ fontSize: 10, padding: '5px 10px', width: '100%' }}
+                        >
+                          + Adicionar jogador
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Titulares - live style with number badges */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -647,6 +813,17 @@ export default function SetupScreen() {
                         placeholder={`Titular ${i + 1}`}
                         style={{ flex: 1, padding: '6px 10px', fontSize: 12, fontWeight: 600 }}
                       />
+                      {suggestedIds[tk].has(p.id) && <SuggestionTag />}
+                      {p.name && (
+                        <button
+                          onClick={() => handleMarkInactive(tk, 'starters', i)}
+                          title="Marcar como inativo"
+                          style={{
+                            background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
+                            fontSize: 13, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
+                          }}
+                        >🚫</button>
+                      )}
                     </div>
                   ))}
 
@@ -692,6 +869,15 @@ export default function SetupScreen() {
                           placeholder={`Reserva ${i + 1}`}
                           style={{ flex: 1, padding: '6px 10px', fontSize: 11 }}
                         />
+                        {suggestedIds[tk].has(p.id) && <SuggestionTag />}
+                        <button
+                          onClick={() => handleMarkInactive(tk, 'reserves', i)}
+                          title="Marcar como inativo"
+                          style={{
+                            background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
+                            fontSize: 12, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
+                          }}
+                        >🚫</button>
                         <button onClick={() => removeReserve(tk, i)} style={{
                           background: 'rgba(255,61,61,0.1)', border: 'none', color: 'var(--red)',
                           fontSize: 13, width: 24, height: 28, borderRadius: 4, cursor: 'pointer', flexShrink: 0
@@ -750,6 +936,7 @@ export default function SetupScreen() {
                       </div>
                     ))}
                   </div>
+                  </>}
 
                   {/* Coach footer */}
                   {team.coach && (
@@ -815,6 +1002,84 @@ function MatchInfoSection({ match, updateField }: { match: any; updateField: (f:
         </div>
       )}
     </div>
+  );
+}
+
+function SquadSourceChoice({
+  mappingInfo,
+  onChoose,
+}: {
+  mappingInfo: { hasAutoSquad: boolean } | null;
+  onChoose: (mode: 'suggested' | 'manual') => void;
+}) {
+  if (mappingInfo === null) {
+    return (
+      <div style={{ padding: '14px 0', textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>
+        Verificando disponibilidade do elenco automático...
+      </div>
+    );
+  }
+
+  if (!mappingInfo.hasAutoSquad) {
+    return (
+      <div style={{
+        background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8,
+        padding: 14, marginBottom: 14, textAlign: 'center'
+      }}>
+        <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 10, lineHeight: 1.5 }}>
+          ⚠️ Elenco automático indisponível para este time — a API-Football não tem esse time mapeado ainda.
+        </div>
+        <button onClick={() => onChoose('manual')} className="btn-green" style={{ padding: '8px 20px', fontSize: 12 }}>
+          ✍️ Escalar eu mesmo
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8,
+      padding: 14, marginBottom: 14
+    }}>
+      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 10, textAlign: 'center' }}>
+        Como você quer montar a escalação desse time?
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => onChoose('suggested')}
+          className="btn-green"
+          style={{ flex: 1, padding: '10px 8px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+          <span>✨ Usar escalação sugerida</span>
+          <span style={{ fontSize: 9, fontWeight: 400, opacity: 0.8 }}>elenco real via API-Football</span>
+        </button>
+        <button
+          onClick={() => onChoose('manual')}
+          className="btn-ghost"
+          style={{ flex: 1, padding: '10px 8px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+          <span>✍️ Escalar eu mesmo</span>
+          <span style={{ fontSize: 9, fontWeight: 400, opacity: 0.8 }}>lista em branco, do zero</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SuggestionTag() {
+  return (
+    <span
+      title="Sugestão ainda não confirmada — só você vê essa mudança por enquanto"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
+        background: 'rgba(255, 200, 0, 0.12)', border: '1px solid rgba(255, 200, 0, 0.35)',
+        color: '#ffc800', fontSize: 9, fontWeight: 600, letterSpacing: 0.5,
+        padding: '2px 6px', borderRadius: 10, textTransform: 'uppercase'
+      }}
+    >
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#ffc800' }} />
+      sugestão
+    </span>
   );
 }
 
