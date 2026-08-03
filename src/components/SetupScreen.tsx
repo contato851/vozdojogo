@@ -7,6 +7,7 @@ import { useTeamLogo } from '../hooks/useTeamLogo';
 import TeamPicker from './TeamPicker';
 import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
 import { useSavedLineups } from '../hooks/useSavedLineups';
+import { fetchSquad } from '../data/apiFootball';
 
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
   const { logoUrl } = useTeamLogo(teamName, false);
@@ -23,6 +24,8 @@ export default function SetupScreen() {
   const [pickerTeam, setPickerTeam] = useState<'teamA' | 'teamB' | null>(null);
   const [savingLineup, setSavingLineup] = useState<'teamA' | 'teamB' | null>(null);
   const [lineupError, setLineupError] = useState<string | null>(null);
+  const [fetchingSquad, setFetchingSquad] = useState<'teamA' | 'teamB' | null>(null);
+  const [squadError, setSquadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dragItem = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
   const dragOver = useRef<{ tk: 'teamA' | 'teamB'; type: 'starters' | 'reserves' | 'unlisted'; idx: number } | null>(null);
@@ -242,6 +245,39 @@ export default function SetupScreen() {
     }
   };
 
+  const handleFetchSquad = async (tk: 'teamA' | 'teamB') => {
+    const team = match[tk];
+
+    if (!team.name || team.name === 'TIME A' || team.name === 'TIME B') {
+      setSquadError('Selecione um time antes de buscar o elenco.');
+      return;
+    }
+
+    try {
+      setFetchingSquad(tk);
+      setSquadError(null);
+
+      const result = await fetchSquad(team.name);
+      const allPlayers = [...result.starters, ...result.reserves];
+      const { starters, reserves } = buildLineupFromPlayers(tk, allPlayers);
+
+      setMatch(m => ({
+        ...m,
+        [tk]: {
+          ...m[tk],
+          starters,
+          reserves,
+          coach: result.coach || m[tk].coach,
+          unlisted: [],
+        }
+      }));
+    } catch (error: any) {
+      setSquadError(error?.message || `Não foi possível buscar o elenco de ${team.name}.`);
+    } finally {
+      setFetchingSquad(null);
+    }
+  };
+
   const hasLive = liveState && loadLive()?.matchId === match.id;
   const teamASelected = match.teamA.name && match.teamA.name !== 'TIME A';
   const teamBSelected = match.teamB.name && match.teamB.name !== 'TIME B';
@@ -443,6 +479,17 @@ export default function SetupScreen() {
         </div>
       )}
 
+      {/* Squad fetch error */}
+      {squadError && (
+        <div style={{
+          background: 'rgba(255,61,61,0.1)', border: '1px solid rgba(255,61,61,0.3)',
+          borderRadius: 'var(--radius)', padding: '8px 14px', marginBottom: 14,
+          fontSize: 12, color: 'var(--red)', textAlign: 'center'
+        }}>
+          {squadError}
+        </div>
+      )}
+
       {/* === MATCH INFO (collapsible) === */}
       <MatchInfoSection match={match} updateField={updateField} />
 
@@ -528,19 +575,35 @@ export default function SetupScreen() {
                     </div>
 
                     {hasTeam && (
-                      <button
-                        onClick={() => handleSaveLineup(tk)}
-                        className="btn-ghost"
-                        style={{
-                          fontSize: 10,
-                          padding: '5px 10px',
-                          opacity: savingLineup === tk ? 0.7 : 1,
-                          cursor: savingLineup === tk ? 'wait' : 'pointer'
-                        }}
-                        disabled={savingLineup === tk}
-                      >
-                        {savingLineup === tk ? '💾 Salvando...' : '💾 Salvar elenco'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => handleFetchSquad(tk)}
+                          className="btn-ghost"
+                          style={{
+                            fontSize: 10,
+                            padding: '5px 10px',
+                            opacity: fetchingSquad === tk ? 0.7 : 1,
+                            cursor: fetchingSquad === tk ? 'wait' : 'pointer'
+                          }}
+                          disabled={fetchingSquad === tk}
+                          title="Busca o elenco atual na API-Football e preenche os campos abaixo"
+                        >
+                          {fetchingSquad === tk ? '🔍 Buscando...' : '🔍 Buscar elenco real'}
+                        </button>
+                        <button
+                          onClick={() => handleSaveLineup(tk)}
+                          className="btn-ghost"
+                          style={{
+                            fontSize: 10,
+                            padding: '5px 10px',
+                            opacity: savingLineup === tk ? 0.7 : 1,
+                            cursor: savingLineup === tk ? 'wait' : 'pointer'
+                          }}
+                          disabled={savingLineup === tk}
+                        >
+                          {savingLineup === tk ? '💾 Salvando...' : '💾 Salvar elenco'}
+                        </button>
+                      </div>
                     )}
                   </div>
 

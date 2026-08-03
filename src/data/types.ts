@@ -6,6 +6,10 @@ export interface Player {
   redCard?: boolean;
   goals?: number;
   subIn?: boolean;
+  // Optional enrichment from API-Football (present when player came from "Buscar elenco real")
+  position?: string;
+  age?: number | null;
+  photo?: string;
 }
 
 export interface Team {
