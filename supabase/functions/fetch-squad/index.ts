@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import {
-  findTeamId,
   fetchSquadByTeamId,
   fetchCurrentCoach,
   mapSquadPlayers,
@@ -64,51 +63,50 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const normalizedName = normalize(teamName);
+    // Team resolution no longer does a live name search — it only trusts
+    // team_api_mappings, which was built and reviewed offline. This is what
+    // prevents ever silently matching the wrong team (different country,
+    // youth/reserve squad, unrelated homonym club).
+    const { data: mapping } = await supabase
+      .from("team_api_mappings")
+      .select("api_football_team_id, api_football_team_name, confidence, needs_narrator_confirmation")
+      .eq("app_team_name", teamName)
+      .maybeSingle();
+
+    if (!mapping) {
+      return new Response(
+        JSON.stringify({ error: `Time ainda não mapeado: "${teamName}". Peça pra um admin mapear em team_api_mappings.` }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (mapping.confidence !== "confirmed" || mapping.api_football_team_id == null) {
+      return new Response(
+        JSON.stringify({ error: "Elenco automático indisponível para este time — preencha manualmente." }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const apiTeamId = mapping.api_football_team_id;
+    const resolvedTeamName = mapping.api_football_team_name ?? teamName;
 
     const { data: cachedRow } = await supabase
       .from("team_squads")
-      .select("api_team_id, team_name, players, coach, fetched_at")
-      .eq("team_name_normalized", normalizedName)
+      .select("players, coach, fetched_at")
+      .eq("api_team_id", apiTeamId)
       .maybeSingle();
 
-    let apiTeamId: number;
-    let resolvedTeamName: string;
+    const isFresh = cachedRow && Date.now() - new Date(cachedRow.fetched_at).getTime() < CACHE_TTL_MS;
+
     let mapped: MappedPlayer[];
     let coach: string;
     let source: string;
 
-    const isFresh = cachedRow && Date.now() - new Date(cachedRow.fetched_at).getTime() < CACHE_TTL_MS;
-
     if (cachedRow && isFresh) {
-      apiTeamId = cachedRow.api_team_id;
-      resolvedTeamName = cachedRow.team_name;
       mapped = cachedRow.players as MappedPlayer[];
       coach = cachedRow.coach;
       source = "team-squads-cache";
-    } else if (cachedRow && !isFresh) {
-      // Known team, but stale cache — refresh from API-Football directly by id
-      // (skips the /teams search call since we already know the api_team_id).
-      apiTeamId = cachedRow.api_team_id;
-      resolvedTeamName = cachedRow.team_name;
-      const [squadPlayers, fetchedCoach] = await Promise.all([
-        fetchSquadByTeamId(apiTeamId, API_FOOTBALL_KEY),
-        fetchCurrentCoach(apiTeamId, API_FOOTBALL_KEY),
-      ]);
-      mapped = mapSquadPlayers(squadPlayers);
-      coach = fetchedCoach;
-      source = "api-football";
     } else {
-      const team = await findTeamId(teamName, API_FOOTBALL_KEY);
-      if (!team) {
-        return new Response(
-          JSON.stringify({ error: `Nenhum time encontrado para "${teamName}" na API-Football.` }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      apiTeamId = team.id;
-      resolvedTeamName = team.name;
       const [squadPlayers, fetchedCoach] = await Promise.all([
         fetchSquadByTeamId(apiTeamId, API_FOOTBALL_KEY),
         fetchCurrentCoach(apiTeamId, API_FOOTBALL_KEY),
@@ -163,16 +161,21 @@ serve(async (req) => {
       source,
     });
 
-    return new Response(
-      JSON.stringify({
-        starters,
-        reserves,
-        coach,
-        source,
-        resolvedTeamName,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const responseBody: Record<string, unknown> = {
+      starters,
+      reserves,
+      coach,
+      source,
+      resolvedTeamName,
+    };
+
+    if (mapping.needs_narrator_confirmation) {
+      responseBody.warning = "Confirme se este é o time correto antes de usar ao vivo";
+    }
+
+    return new Response(JSON.stringify(responseBody), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("fetch-squad error:", error);
 

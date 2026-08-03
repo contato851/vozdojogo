@@ -1,9 +1,5 @@
 const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
 
-export type ApiFootballTeamSearchItem = {
-  team: { id: number; name: string; country?: string; logo?: string };
-};
-
 export type ApiFootballSquadPlayer = {
   id: number;
   name: string;
@@ -53,23 +49,6 @@ export async function apiFootballFetch(path: string, apiKey: string) {
   }
 
   return response.json();
-}
-
-export async function findTeamId(teamName: string, apiKey: string): Promise<{ id: number; name: string } | null> {
-  const data = await apiFootballFetch(`/teams?search=${encodeURIComponent(teamName)}`, apiKey) as {
-    response: ApiFootballTeamSearchItem[];
-  };
-
-  const candidates = data?.response ?? [];
-  if (candidates.length === 0) return null;
-
-  const target = normalize(teamName);
-
-  // Prefer an exact (normalized) name match; fall back to the first result.
-  const exact = candidates.find((c) => normalize(c.team.name) === target);
-  const chosen = exact ?? candidates[0];
-
-  return { id: chosen.team.id, name: chosen.team.name };
 }
 
 export async function fetchSquadByTeamId(teamId: number, apiKey: string): Promise<ApiFootballSquadPlayer[]> {
