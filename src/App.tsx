@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SubscriptionProvider, useSubscription } from './context/SubscriptionContext';
 import { OnboardingProvider } from './context/OnboardingContext';
 import { AppProvider } from './context/AppContext';
-import { CopaModeProvider, useCopaMode } from './context/CopaModeContext';
 import TopBar from './components/TopBar';
 import GraceBanner from './components/GraceBanner';
 import LoginScreen from './components/LoginScreen';
@@ -15,8 +14,6 @@ import ViewerScreen from './components/ViewerScreen';
 import SettingsScreen from './components/SettingsScreen';
 import NotFound from './pages/NotFound';
 import DemoLayout from './components/DemoLayout';
-import ModeSelector from './components/ModeSelector';
-import CopaLayout from './components/CopaLayout';
 
 // Onboarding components
 import LandingPage from './components/onboarding/LandingPage';
@@ -57,16 +54,15 @@ function AppLayout() {
 
 function SubscriptionGate() {
   const { subscribed, loading } = useSubscription();
-  const { mode } = useCopaMode();
 
   if (loading) return <LoadingScreen />;
-  if (!subscribed) return <PaywallScreen />;
-
-  if (mode === null) return <ModeSelector />;
+  // Paywall temporarily disabled — Stripe billing is being swapped for another
+  // payment provider, still TBD. Re-enable `if (!subscribed) return <PaywallScreen />;`
+  // once the new provider is wired up.
 
   return (
     <AppProvider>
-      {mode === 'copa' ? <CopaLayout /> : <AppLayout />}
+      <AppLayout />
     </AppProvider>
   );
 }
@@ -110,7 +106,6 @@ function AppShell() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <CopaModeProvider>
         <OnboardingProvider>
           <Routes>
             {/* Public viewer route */}
@@ -149,7 +144,6 @@ function AppShell() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </OnboardingProvider>
-        </CopaModeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

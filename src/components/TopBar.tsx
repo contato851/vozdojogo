@@ -1,22 +1,14 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { useCopaMode } from '../context/CopaModeContext';
 import Logo from './Logo';
 
 export default function TopBar() {
   const { liveState, startLive, savedIndicator } = useApp();
   const { signOut } = useAuth();
-  const { mode, resetMode } = useCopaMode();
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
-
-  const handleSwitchMode = () => {
-    if (window.confirm('Trocar de modo? Voltará para a tela de seleção. Os dados da partida atual ficarão salvos.')) {
-      resetMode();
-    }
-  };
 
   const goLive = () => {
     if (liveState) {
@@ -37,23 +29,6 @@ export default function TopBar() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Logo size="md" />
-        {mode === 'copa' && (
-          <button
-            onClick={handleSwitchMode}
-            title="Clique para trocar de modo"
-            style={{
-              background: 'rgba(212,175,55,0.12)',
-              border: '1px solid rgba(212,175,55,0.5)',
-              color: '#d4af37', fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
-              padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
-              fontFamily: 'var(--font-body)', transition: 'all .2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.22)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.12)'; }}
-          >
-            🏆 COPA 2026
-          </button>
-        )}
       </div>
 
       <div style={{ display: 'flex', gap: 4 }}>
