@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { supabase } from '@/integrations/supabase/client';
 import Logo from '../Logo';
@@ -76,7 +77,7 @@ export default function ProfileSummary() {
         {/* Profile card */}
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: 24, marginBottom: 24
+          borderRadius: 0, padding: 24, marginBottom: 24
         }}>
           <ProfileRow label="Tipo" value={`Narrador de ${narrationLabel}`} />
           <ProfileRow label="Frequência" value={frequencyLabel} />
@@ -94,8 +95,8 @@ export default function ProfileSummary() {
 
         {/* Value calculation */}
         <div style={{
-          background: 'var(--green-dim)', border: '1px solid rgba(0,200,83,0.2)',
-          borderRadius: 10, padding: '14px 20px', marginBottom: 32, textAlign: 'center'
+          background: 'var(--green-dim)', border: '1px solid rgba(0,122,67,0.2)',
+          borderRadius: 0, padding: '14px 20px', marginBottom: 32, textAlign: 'center'
         }}>
           <span style={{ fontSize: 15, color: 'var(--green)', fontWeight: 600 }}>
             Isso dá menos de R$ {pricePerGame} por jogo. Menos que uma água no estádio.
@@ -108,9 +109,9 @@ export default function ProfileSummary() {
           disabled={loading}
           style={{
             width: '100%', padding: 16, background: loading ? 'var(--bg3)' : 'var(--green)',
-            color: loading ? 'var(--text3)' : 'var(--bg)',
+            color: loading ? 'var(--text3)' : '#fff',
             fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-head)',
-            border: 'none', borderRadius: 8, cursor: loading ? 'not-allowed' : 'pointer',
+            border: 'none', borderRadius: 0, cursor: loading ? 'not-allowed' : 'pointer',
             letterSpacing: 2, transition: 'all .2s', marginBottom: 12
           }}
           onMouseEnter={e => { if (!loading) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
@@ -128,10 +129,11 @@ export default function ProfileSummary() {
           style={{
             background: 'none', border: 'none', color: 'var(--text3)',
             fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)',
-            textDecoration: 'underline', display: 'block', margin: '8px auto 0'
+            textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: 4,
+            margin: '8px auto 0'
           }}
         >
-          ← Voltar
+          <ArrowLeft size={13} /> Voltar
         </button>
       </div>
     </div>
@@ -144,7 +146,7 @@ function ProfileRow({ label, value, last }: { label: string; value: string; last
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 0', borderBottom: last ? 'none' : '1px solid var(--border)'
     }}>
-      <span style={{ color: 'var(--green)', fontSize: 18 }}>✓</span>
+      <Check size={17} color="var(--green)" />
       <div>
         <div style={{ fontSize: 10, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500 }}>{value}</div>

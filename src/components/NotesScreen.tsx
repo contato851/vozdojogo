@@ -8,20 +8,14 @@ function NoteTeamLogo({ teamName, color, accent, size = 38 }: { teamName: string
 
   if (logoUrl && !err) {
     return (
-      <div style={{
-        width: size, height: size, borderRadius: 7, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', background: 'var(--bg3)',
-        overflow: 'hidden', flexShrink: 0
-      }}>
-        <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
-          style={{ width: size - 4, height: size - 4, objectFit: 'contain' }} />
-      </div>
+      <img src={logoUrl} alt={teamName} onError={() => setErr(true)}
+        style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />
     );
   }
 
   return (
     <div style={{
-      width: size, height: size, borderRadius: 7, display: 'flex',
+      width: size, height: size, borderRadius: '50%', display: 'flex',
       alignItems: 'center', justifyContent: 'center', background: color, flexShrink: 0
     }}>
       <span style={{ fontSize: size * 0.45, fontWeight: 700, fontFamily: 'var(--font-head)', color: accent }}>
@@ -52,7 +46,7 @@ export default function NotesScreen() {
             <div key={tk} style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 background: 'var(--bg2)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', padding: 20,
+                borderRadius: 0, padding: 20,
                 borderTop: `3px solid ${t.color}`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -67,7 +61,7 @@ export default function NotesScreen() {
                   onChange={e => updateCuriosities(tk, e.target.value)}
                   placeholder="• Invicto há 5 jogos&#10;• Artilheiro: João com 8 gols&#10;• Não perde em casa desde março"
                   style={{
-                    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
+                    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
                     padding: 12, color: 'var(--text)', fontSize: 13, width: '100%', outline: 'none',
                     fontFamily: 'var(--font-body)', lineHeight: 1.8, resize: 'vertical', minHeight: 250
                   }}

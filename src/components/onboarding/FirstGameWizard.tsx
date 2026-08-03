@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Goal, ArrowLeft, ArrowRight, ChevronUp, ChevronDown, Mic } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../../context/AuthContext';
 import { useOnboarding } from '../../context/OnboardingContext';
@@ -73,7 +74,7 @@ export default function FirstGameWizard() {
 
   const inputStyle = {
     width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
-    borderRadius: 8, padding: '12px 16px', color: 'var(--text)',
+    borderRadius: 0, padding: '12px 16px', color: 'var(--text)',
     fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none',
     transition: 'border-color .3s'
   };
@@ -117,7 +118,7 @@ export default function FirstGameWizard() {
             {currentTeam ? (
               <div style={{
                 background: 'var(--bg2)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: 24, textAlign: 'center', marginBottom: 24
+                borderRadius: 0, padding: 24, textAlign: 'center', marginBottom: 24
               }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: '50%',
@@ -136,14 +137,14 @@ export default function FirstGameWizard() {
                   {currentTeam.name}
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: 4, background: currentTeam.color, border: '1px solid var(--border2)' }} />
-                  <div style={{ width: 24, height: 24, borderRadius: 4, background: currentTeam.accent, border: '1px solid var(--border2)' }} />
+                  <div style={{ width: 24, height: 24, borderRadius: 0, background: currentTeam.color, border: '1px solid var(--border2)' }} />
+                  <div style={{ width: 24, height: 24, borderRadius: 0, background: currentTeam.accent, border: '1px solid var(--border2)' }} />
                 </div>
                 <button
                   onClick={() => setShowPicker(true)}
                   style={{
                     background: 'var(--bg3)', border: '1px solid var(--border2)',
-                    borderRadius: 6, padding: '8px 20px', color: 'var(--text2)',
+                    borderRadius: 0, padding: '8px 20px', color: 'var(--text2)',
                     fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)'
                   }}
                 >
@@ -155,7 +156,7 @@ export default function FirstGameWizard() {
                 onClick={() => setShowPicker(true)}
                 style={{
                   width: '100%', padding: '32px 20px', background: 'var(--bg2)',
-                  border: '2px dashed var(--border2)', borderRadius: 12, cursor: 'pointer',
+                  border: '2px dashed var(--border2)', borderRadius: 0, cursor: 'pointer',
                   color: 'var(--text2)', fontSize: 16, fontFamily: 'var(--font-body)',
                   marginBottom: 24, transition: 'all .2s', display: 'flex',
                   flexDirection: 'column', alignItems: 'center', gap: 8
@@ -163,7 +164,7 @@ export default function FirstGameWizard() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green)'; e.currentTarget.style.color = 'var(--green)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text2)'; }}
               >
-                <span style={{ fontSize: 32 }}>⚽</span>
+                <Goal size={30} />
                 Selecionar Time
               </button>
             )}
@@ -173,28 +174,30 @@ export default function FirstGameWizard() {
                 <button
                   onClick={() => setWizardStep(1)}
                   style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
                     background: 'none', border: 'none', color: 'var(--text3)',
                     fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)',
                     textDecoration: 'underline'
                   }}
                 >
-                  ← Voltar
+                  <ArrowLeft size={13} /> Voltar
                 </button>
               )}
               <button
                 onClick={() => setWizardStep(wizardStep + 1)}
                 disabled={!currentTeam}
                 style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   flex: 1, padding: 14,
                   background: currentTeam ? 'var(--green)' : 'var(--bg3)',
-                  color: currentTeam ? 'var(--bg)' : 'var(--text3)',
+                  color: currentTeam ? '#fff' : 'var(--text3)',
                   fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
-                  border: 'none', borderRadius: 8,
+                  border: 'none', borderRadius: 0,
                   cursor: currentTeam ? 'pointer' : 'not-allowed',
                   letterSpacing: 2, transition: 'all .2s'
                 }}
               >
-                PRÓXIMO →
+                PRÓXIMO <ArrowRight size={16} />
               </button>
             </div>
           </div>
@@ -222,12 +225,13 @@ export default function FirstGameWizard() {
               <button
                 onClick={() => setShowExtra(!showExtra)}
                 style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
                   background: 'none', border: 'none', color: 'var(--text3)',
                   fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)',
                   textDecoration: 'underline', textAlign: 'left', padding: '4px 0'
                 }}
               >
-                {showExtra ? '▼ Menos informações' : '▶ Mais informações'}
+                {showExtra ? <><ChevronUp size={13} /> Menos informações</> : <><ChevronDown size={13} /> Mais informações</>}
               </button>
 
               {showExtra && (
@@ -260,25 +264,26 @@ export default function FirstGameWizard() {
               <button
                 onClick={() => setWizardStep(2)}
                 style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
                   background: 'none', border: 'none', color: 'var(--text3)',
                   fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)',
                   textDecoration: 'underline'
                 }}
               >
-                ← Voltar
+                <ArrowLeft size={13} /> Voltar
               </button>
               <button
                 onClick={handleFinish}
                 style={{
                   flex: 1, padding: 14, background: 'var(--green)',
-                  color: 'var(--bg)', fontSize: 18, fontWeight: 700,
-                  fontFamily: 'var(--font-head)', border: 'none', borderRadius: 8,
+                  color: '#fff', fontSize: 18, fontWeight: 700,
+                  fontFamily: 'var(--font-head)', border: 'none', borderRadius: 0,
                   cursor: 'pointer', letterSpacing: 2, transition: 'all .2s'
                 }}
                 onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'none'; }}
               >
-                CRIAR JOGO E COMEÇAR 🎙️
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>CRIAR JOGO E COMEÇAR <Mic size={16} /></span>
               </button>
             </div>
           </div>

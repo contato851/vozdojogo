@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, AlertTriangle, CreditCard, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import Logo from './Logo';
@@ -71,31 +72,34 @@ export default function SettingsScreen() {
             onClick={() => navigate('/escalacao')}
             style={{
               background: 'none', border: '1px solid var(--border2)', color: 'var(--text2)',
-              padding: '8px 16px', borderRadius: 6, cursor: 'pointer',
-              fontSize: 12, fontFamily: 'var(--font-body)', transition: 'all .2s'
+              padding: '8px 16px', borderRadius: 0, cursor: 'pointer',
+              fontSize: 12, fontFamily: 'var(--font-body)', transition: 'all .2s',
+              display: 'flex', alignItems: 'center', gap: 5
             }}
           >
-            ← Voltar
+            <ArrowLeft size={13} /> Voltar
           </button>
         </div>
 
         {/* Grace period warning */}
         {gracePeriod && (
           <div style={{
-            padding: '14px 18px', marginBottom: 20, borderRadius: 8,
-            background: graceDaysRemaining <= 3 ? 'rgba(255,61,61,0.15)' : 'rgba(255,215,64,0.15)',
-            border: `1px solid ${graceDaysRemaining <= 3 ? 'rgba(255,61,61,0.3)' : 'rgba(255,215,64,0.3)'}`,
+            padding: '14px 18px', marginBottom: 20, borderRadius: 0,
+            background: graceDaysRemaining <= 3 ? 'rgba(214,40,34,0.08)' : 'rgba(156,100,0,0.08)',
+            border: `1px solid ${graceDaysRemaining <= 3 ? 'rgba(214,40,34,0.3)' : 'rgba(156,100,0,0.25)'}`,
             color: graceDaysRemaining <= 3 ? 'var(--red)' : 'var(--gold)',
-            fontSize: 13, fontWeight: 600
+            fontSize: 13, fontWeight: 600,
+            display: 'flex', alignItems: 'flex-start', gap: 8
           }}>
-            ⚠️ Sua assinatura está inadimplente. Você tem {graceDaysRemaining} dia{graceDaysRemaining !== 1 ? 's' : ''} para regularizar antes de perder o acesso.
+            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>Sua assinatura está inadimplente. Você tem {graceDaysRemaining} dia{graceDaysRemaining !== 1 ? 's' : ''} para regularizar antes de perder o acesso.</span>
           </div>
         )}
 
         {/* Account info */}
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: 24, marginBottom: 16
+          borderRadius: 0, padding: 24, marginBottom: 16
         }}>
           <h3 style={{
             fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 600,
@@ -109,7 +113,7 @@ export default function SettingsScreen() {
         {/* Subscription info */}
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: 24, marginBottom: 16
+          borderRadius: 0, padding: 24, marginBottom: 16
         }}>
           <h3 style={{
             fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 600,
@@ -125,7 +129,7 @@ export default function SettingsScreen() {
         {/* Actions */}
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 12, padding: 24, marginBottom: 16
+          borderRadius: 0, padding: 24, marginBottom: 16
         }}>
           <h3 style={{
             fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 600,
@@ -139,13 +143,14 @@ export default function SettingsScreen() {
             disabled={portalLoading}
             style={{
               width: '100%', padding: 14, marginBottom: 10,
-              background: 'var(--green)', color: 'var(--bg)',
+              background: 'var(--green)', color: '#fff',
               fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-head)',
-              border: 'none', borderRadius: 8, cursor: portalLoading ? 'not-allowed' : 'pointer',
-              letterSpacing: 1, transition: 'all .2s', opacity: portalLoading ? 0.5 : 1
+              border: 'none', borderRadius: 0, cursor: portalLoading ? 'not-allowed' : 'pointer',
+              letterSpacing: 1, transition: 'all .2s', opacity: portalLoading ? 0.5 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
             }}
           >
-            {portalLoading ? 'ABRINDO...' : '💳 GERENCIAR PAGAMENTO / TROCAR CARTÃO'}
+            {portalLoading ? 'ABRINDO...' : <><CreditCard size={15} /> GERENCIAR PAGAMENTO / TROCAR CARTÃO</>}
           </button>
 
           <button
@@ -155,12 +160,13 @@ export default function SettingsScreen() {
               width: '100%', padding: 12,
               background: 'var(--bg3)', color: 'var(--text2)',
               fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-              border: '1px solid var(--border2)', borderRadius: 8,
+              border: '1px solid var(--border2)', borderRadius: 0,
               cursor: refreshing ? 'not-allowed' : 'pointer',
-              transition: 'all .2s', opacity: refreshing ? 0.5 : 1
+              transition: 'all .2s', opacity: refreshing ? 0.5 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
             }}
           >
-            {refreshing ? 'Atualizando...' : '🔄 Atualizar status da assinatura'}
+            {refreshing ? 'Atualizando...' : <><RefreshCw size={13} /> Atualizar status da assinatura</>}
           </button>
         </div>
 
@@ -169,9 +175,9 @@ export default function SettingsScreen() {
           onClick={handleLogout}
           style={{
             width: '100%', padding: 14, marginTop: 8,
-            background: 'rgba(255,61,61,0.1)', color: 'var(--red)',
+            background: 'rgba(214,40,34,0.08)', color: 'var(--red)',
             fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-body)',
-            border: '1px solid rgba(255,61,61,0.2)', borderRadius: 8,
+            border: '1px solid rgba(214,40,34,0.2)', borderRadius: 0,
             cursor: 'pointer', transition: 'all .2s'
           }}
         >

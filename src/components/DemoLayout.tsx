@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { ClipboardList, NotebookPen, Check } from 'lucide-react';
 import { AppProvider, useApp } from '../context/AppContext';
 import Logo from './Logo';
 import SetupScreen from './SetupScreen';
@@ -25,7 +26,7 @@ function DemoTopBar() {
         <Logo size="md" />
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: 1.5, padding: '3px 8px',
-          background: 'var(--green-dim)', color: 'var(--green)', borderRadius: 4,
+          background: 'var(--green-dim)', color: 'var(--green)', borderRadius: 0,
           border: '1px solid var(--green)'
         }}>
           DEMO
@@ -33,15 +34,15 @@ function DemoTopBar() {
       </div>
 
       <div style={{ display: 'flex', gap: 4 }}>
-        <NavBtn active={path === '/demo' || path === '/demo/escalacao'} onClick={() => navigate('/demo/escalacao')}>📋 ESCALAÇÃO</NavBtn>
-        <NavBtn active={path === '/demo/notas'} onClick={() => navigate('/demo/notas')}>📝 NOTAS</NavBtn>
+        <NavBtn active={path === '/demo' || path === '/demo/escalacao'} onClick={() => navigate('/demo/escalacao')}><ClipboardList size={13} /> ESCALAÇÃO</NavBtn>
+        <NavBtn active={path === '/demo/notas'} onClick={() => navigate('/demo/notas')}><NotebookPen size={13} /> NOTAS</NavBtn>
         <button
           onClick={goLive}
           style={{
-            background: path === '/demo/ao-vivo' ? 'rgba(255,61,61,0.2)' : 'rgba(255,61,61,0.1)',
-            border: `1px solid ${path === '/demo/ao-vivo' ? 'var(--red)' : 'rgba(255,61,61,0.3)'}`,
+            background: path === '/demo/ao-vivo' ? 'rgba(214,40,34,0.15)' : 'rgba(214,40,34,0.08)',
+            border: `1px solid ${path === '/demo/ao-vivo' ? 'var(--red)' : 'rgba(214,40,34,0.25)'}`,
             color: 'var(--red)', fontSize: 11, fontWeight: 600, letterSpacing: 1,
-            padding: '8px 18px', borderRadius: 6, cursor: 'pointer',
+            padding: '8px 18px', borderRadius: 0, cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
           }}
         >
@@ -55,7 +56,7 @@ function DemoTopBar() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {savedIndicator && (
-          <span style={{ fontSize: 9, color: 'var(--green)', letterSpacing: 1 }}>✓ Salvo</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--green)', letterSpacing: 1 }}><Check size={11} /> Salvo</span>
         )}
         <span style={{ fontSize: 10, color: 'var(--text3)' }}>Modo demonstração</span>
       </div>
@@ -68,11 +69,12 @@ function NavBtn({ active, onClick, children }: { active: boolean; onClick: () =>
     <button
       onClick={onClick}
       style={{
+        display: 'flex', alignItems: 'center', gap: 6,
         background: active ? 'var(--green-dim)' : 'var(--bg3)',
         border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
         color: active ? 'var(--green)' : 'var(--text2)',
         fontSize: 11, fontWeight: 600, letterSpacing: 1, padding: '8px 18px',
-        borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font-body)',
+        borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)',
         transition: 'all .2s'
       }}
     >

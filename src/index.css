@@ -8,24 +8,26 @@
   :root {
     --background: 228 33% 7%;
     --foreground: 228 33% 92%;
-    --bg: #0f1118;
-    --bg2: #161922;
-    --bg3: #1c2030;
-    --green: #00c853;
-    --green-hsl: 148 100% 39%;
-    --green-dim: rgba(0,200,83,0.15);
-    --green-glow: rgba(0,200,83,0.3);
-    --gold: #ffd740;
-    --gold-hsl: 44 100% 62%;
-    --red: #ff3d3d;
-    --red-hsl: 0 100% 62%;
+    /* Light theme (globoesporte-inspired): soft neutral page, white surfaces,
+       verde reservado como destaque pontual, nunca como fundo dominante. */
+    --bg: #f4f5f7;
+    --bg2: #ffffff;
+    --bg3: #f0f1f3;
+    --green: #007a43;
+    --green-hsl: 153 100% 24%;
+    --green-dim: rgba(0,122,67,0.08);
+    --gold: #9c6400;
+    --gold-hsl: 39 100% 31%;
+    --red: #d62822;
+    --red-hsl: 2 73% 49%;
     --yellow-card: #ffcc00;
-    --text: #e8eaf0;
-    --text2: rgba(232,234,240,0.55);
-    --text3: rgba(232,234,240,0.3);
-    --border: rgba(232,234,240,0.08);
-    --border2: rgba(232,234,240,0.15);
-    --radius: 8px;
+    --text: #14171c;
+    --text2: #5b6270;
+    --text3: #8b93a0;
+    --border: #e4e7eb;
+    --border2: #d3d7dd;
+    --radius: 0px;
+    --shadow-card: 0 1px 2px rgba(20,23,28,.05), 0 4px 16px rgba(20,23,28,.06);
     --font-head: 'Teko', sans-serif;
     --font-body: 'DM Sans', sans-serif;
 
@@ -54,6 +56,25 @@
     --sidebar-border: rgba(232,234,240,0.08);
     --sidebar-ring: 148 100% 39%;
   }
+
+  /* Modo escuro da tela AO VIVO — escopado via data-theme, aplicado só
+     na wrapper da LiveScreen quando o narrador liga o toggle. Reproduz a
+     paleta escura original do app (não é o tema padrão em nenhum outro lugar). */
+  [data-theme="dark"] {
+    --bg: #0f1118;
+    --bg2: #161922;
+    --bg3: #1c2030;
+    --green: #00c853;
+    --green-dim: rgba(0,200,83,0.15);
+    --gold: #ffd740;
+    --red: #ff3d3d;
+    --text: #e8eaf0;
+    --text2: rgba(232,234,240,0.55);
+    --text3: rgba(232,234,240,0.3);
+    --border: rgba(232,234,240,0.08);
+    --border2: rgba(232,234,240,0.15);
+    --shadow-card: 0 4px 16px rgba(0,0,0,.4);
+  }
 }
 
 @layer base {
@@ -74,12 +95,12 @@
 
   ::selection {
     background: var(--green);
-    color: var(--bg);
+    color: #fff;
   }
 
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--bg2); }
-  ::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); }
 }
 
 @keyframes fadeUp {
@@ -116,7 +137,7 @@
 
 .btn-green, .btn-ghost, .btn-red {
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   font-family: var(--font-body);
   font-weight: 600;
@@ -124,11 +145,11 @@
   font-size: 12px;
   padding: 8px 16px;
 }
-.btn-green { background: var(--green); color: var(--bg); }
+.btn-green { background: var(--green); color: #fff; }
 .btn-green:hover { filter: brightness(1.15); }
 .btn-ghost { background: var(--bg3); border: 1px solid var(--border2) !important; color: var(--text2); }
 .btn-ghost:hover { color: var(--text); border-color: var(--green) !important; }
-.btn-red { background: rgba(255,61,61,0.15); color: var(--red); border: 1px solid rgba(255,61,61,0.2) !important; }
+.btn-red { background: rgba(214,40,34,0.1); color: var(--red); border: 1px solid rgba(214,40,34,0.2) !important; }
 .btn-red:hover { filter: brightness(1.15); }
 
 .ev-count {

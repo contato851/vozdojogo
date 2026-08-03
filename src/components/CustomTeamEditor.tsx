@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { X } from 'lucide-react';
 import { CustomTeam, CustomTeamPlayer } from '@/hooks/useCustomTeams';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -64,7 +65,7 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
   };
 
   const inputStyle: React.CSSProperties = {
-    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
+    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
     padding: '8px 12px', color: 'var(--text)', fontSize: 13,
     fontFamily: 'var(--font-body)', outline: 'none', width: '100%',
   };
@@ -116,10 +117,10 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {logoUrl && (
             <img src={logoUrl} alt="Logo" onError={e => (e.currentTarget.style.display = 'none')}
-              style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 6, border: '1px solid var(--border)' }} />
+              style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 0, border: '1px solid var(--border)' }} />
           )}
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading} style={{
-            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6,
+            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
             color: 'var(--text2)', fontSize: 12, fontWeight: 600, padding: '8px 16px',
             cursor: uploading ? 'wait' : 'pointer', fontFamily: 'var(--font-body)'
           }}>
@@ -139,7 +140,7 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <label style={{ ...labelStyle, marginBottom: 0 }}>Elenco</label>
           <button onClick={addPlayer} style={{
-            background: 'var(--green-dim)', border: '1px solid var(--green)', borderRadius: 6,
+            background: 'var(--green-dim)', border: '1px solid var(--green)', borderRadius: 0,
             color: 'var(--green)', fontSize: 11, fontWeight: 600, padding: '4px 12px',
             cursor: 'pointer', fontFamily: 'var(--font-body)'
           }}>+ Jogador</button>
@@ -153,9 +154,10 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
               <input value={p.name} onChange={e => updatePlayer(i, 'name', e.target.value)}
                 placeholder="Nome do jogador" style={{ ...inputStyle, flex: 1 }} />
               <button onClick={() => removePlayer(i)} style={{
-                background: 'none', border: 'none', color: 'var(--red)', fontSize: 16,
-                cursor: 'pointer', padding: '2px 6px', opacity: 0.6
-              }}>✕</button>
+                background: 'none', border: 'none', color: 'var(--red)',
+                cursor: 'pointer', padding: '2px 6px', opacity: 0.6,
+                display: 'flex', alignItems: 'center'
+              }}><X size={15} /></button>
             </div>
           ))}
         </div>
@@ -164,12 +166,12 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button onClick={onCancel} style={{
-          flex: 1, padding: '10px', borderRadius: 6, border: '1px solid var(--border)',
+          flex: 1, padding: '10px', borderRadius: 0, border: '1px solid var(--border)',
           background: 'var(--bg3)', color: 'var(--text2)', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'var(--font-body)'
         }}>Cancelar</button>
         <button onClick={handleSave} disabled={saving || !name.trim()} style={{
-          flex: 1, padding: '10px', borderRadius: 6, border: 'none',
+          flex: 1, padding: '10px', borderRadius: 0, border: 'none',
           background: saving || !name.trim() ? 'var(--bg3)' : 'var(--green)',
           color: saving || !name.trim() ? 'var(--text3)' : '#000', fontSize: 13, fontWeight: 700,
           cursor: saving || !name.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)',

@@ -8,6 +8,3 @@ verify_jwt = false
 
 [functions.retrieve-checkout-email]
 verify_jwt = false
-
-[functions.sync-team-squads]
-verify_jwt = false

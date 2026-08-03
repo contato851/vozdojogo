@@ -1,4 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import {
+  LucideIcon, Mic, Tv2, Smartphone, Landmark, Gamepad2,
+  Calendar, CalendarDays, CalendarClock, Flame,
+  GraduationCap, Home, ClipboardList, Star, Globe,
+  RefreshCw, Brain, Lightbulb, Ruler, Zap, ArrowLeft,
+} from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import Logo from '../Logo';
 import ProgressBar from './ProgressBar';
@@ -7,7 +13,7 @@ import SelectableCard from './SelectableCard';
 interface StepConfig {
   question: string;
   multiSelect: boolean;
-  options: { emoji: string; label: string; value: string }[];
+  options: { icon: LucideIcon; label: string; value: string }[];
 }
 
 const STEPS: Record<number, StepConfig> = {
@@ -15,43 +21,43 @@ const STEPS: Record<number, StepConfig> = {
     question: 'Onde você narra?',
     multiSelect: true,
     options: [
-      { emoji: '🎙️', label: 'Rádio', value: 'radio' },
-      { emoji: '📺', label: 'TV', value: 'tv' },
-      { emoji: '📱', label: 'Internet / Streaming', value: 'internet' },
-      { emoji: '🏟️', label: 'Estádio (som local)', value: 'estadio' },
-      { emoji: '🎮', label: 'E-sports', value: 'esports' },
+      { icon: Mic, label: 'Rádio', value: 'radio' },
+      { icon: Tv2, label: 'TV', value: 'tv' },
+      { icon: Smartphone, label: 'Internet / Streaming', value: 'internet' },
+      { icon: Landmark, label: 'Estádio (som local)', value: 'estadio' },
+      { icon: Gamepad2, label: 'E-sports', value: 'esports' },
     ],
   },
   2: {
     question: 'Quantos jogos você narra por mês?',
     multiSelect: false,
     options: [
-      { emoji: '1️⃣', label: '1 a 4 jogos', value: '1-4' },
-      { emoji: '🔢', label: '5 a 12 jogos', value: '5-12' },
-      { emoji: '📅', label: '13 a 20 jogos', value: '13-20' },
-      { emoji: '🔥', label: 'Mais de 20 jogos', value: '20+' },
+      { icon: Calendar, label: '1 a 4 jogos', value: '1-4' },
+      { icon: CalendarDays, label: '5 a 12 jogos', value: '5-12' },
+      { icon: CalendarClock, label: '13 a 20 jogos', value: '13-20' },
+      { icon: Flame, label: 'Mais de 20 jogos', value: '20+' },
     ],
   },
   3: {
     question: 'Em qual nível você atua?',
     multiSelect: false,
     options: [
-      { emoji: '🎓', label: 'Amador / Universitário', value: 'amador' },
-      { emoji: '🏠', label: 'Estadual / Regional', value: 'estadual' },
-      { emoji: '📋', label: 'Série C ou D', value: 'serie-cd' },
-      { emoji: '⭐', label: 'Série A ou B', value: 'serie-ab' },
-      { emoji: '🌍', label: 'Copa do Brasil / Libertadores / Internacional', value: 'internacional' },
+      { icon: GraduationCap, label: 'Amador / Universitário', value: 'amador' },
+      { icon: Home, label: 'Estadual / Regional', value: 'estadual' },
+      { icon: ClipboardList, label: 'Série C ou D', value: 'serie-cd' },
+      { icon: Star, label: 'Série A ou B', value: 'serie-ab' },
+      { icon: Globe, label: 'Copa do Brasil / Libertadores / Internacional', value: 'internacional' },
     ],
   },
   4: {
     question: 'Qual sua maior dificuldade durante a narração ao vivo?',
     multiSelect: false,
     options: [
-      { emoji: '🔄', label: 'Organizar substituições e eventos', value: 'substituicoes' },
-      { emoji: '🧠', label: 'Lembrar nomes e números dos jogadores', value: 'nomes' },
-      { emoji: '💡', label: 'Ter curiosidades prontas na hora certa', value: 'curiosidades' },
-      { emoji: '📐', label: 'Visualizar a formação tática', value: 'tatica' },
-      { emoji: '💥', label: 'Perder dados quando a página cai', value: 'dados' },
+      { icon: RefreshCw, label: 'Organizar substituições e eventos', value: 'substituicoes' },
+      { icon: Brain, label: 'Lembrar nomes e números dos jogadores', value: 'nomes' },
+      { icon: Lightbulb, label: 'Ter curiosidades prontas na hora certa', value: 'curiosidades' },
+      { icon: Ruler, label: 'Visualizar a formação tática', value: 'tatica' },
+      { icon: Zap, label: 'Perder dados quando a página cai', value: 'dados' },
     ],
   },
 };
@@ -156,7 +162,7 @@ export default function QualificationStep({ step }: Props) {
           {config.options.map(opt => (
             <SelectableCard
               key={opt.value}
-              emoji={opt.emoji}
+              icon={opt.icon}
               label={opt.label}
               selected={isSelected(opt.value)}
               onClick={() => handleSelect(opt.value)}
@@ -175,21 +181,22 @@ export default function QualificationStep({ step }: Props) {
           <button
             onClick={handleBack}
             style={{
+              display: 'flex', alignItems: 'center', gap: 4,
               background: 'none', border: 'none', color: 'var(--text3)',
               fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)',
               textDecoration: 'underline'
             }}
           >
-            ← Voltar
+            <ArrowLeft size={13} /> Voltar
           </button>
           <button
             onClick={handleNext}
             disabled={!canProceed()}
             style={{
               flex: 1, padding: 14, background: canProceed() ? 'var(--green)' : 'var(--bg3)',
-              color: canProceed() ? 'var(--bg)' : 'var(--text3)',
+              color: canProceed() ? '#fff' : 'var(--text3)',
               fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
-              border: 'none', borderRadius: 8, cursor: canProceed() ? 'pointer' : 'not-allowed',
+              border: 'none', borderRadius: 0, cursor: canProceed() ? 'pointer' : 'not-allowed',
               letterSpacing: 2, transition: 'all .2s'
             }}
             onMouseEnter={e => { if (canProceed()) { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}

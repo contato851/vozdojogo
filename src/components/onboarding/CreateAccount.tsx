@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Loader2, Check, AlertTriangle, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOnboarding } from '../../context/OnboardingContext';
 import Logo from '../Logo';
@@ -172,7 +173,7 @@ export default function CreateAccount() {
   const inputStyle = (field: string, disabled?: boolean) => ({
     width: '100%', background: disabled ? 'var(--bg2)' : 'var(--bg3)',
     border: `2px solid ${errors[field] ? 'var(--red)' : 'var(--border)'}`,
-    borderRadius: 8, padding: '14px 18px', color: disabled ? 'var(--text2)' : 'var(--text)',
+    borderRadius: 0, padding: '14px 18px', color: disabled ? 'var(--text2)' : 'var(--text)',
     fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
     marginBottom: 4, transition: 'border-color .3s',
     cursor: disabled ? 'not-allowed' : 'text',
@@ -186,7 +187,7 @@ export default function CreateAccount() {
         padding: '40px 20px'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 16, animation: 'pulse 1.5s infinite' }}>⏳</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--green)' }}><Loader2 size={30} className="animate-spin" /></div>
           <p style={{ color: 'var(--text2)', fontSize: 15 }}>Verificando pagamento...</p>
         </div>
       </div>
@@ -205,7 +206,7 @@ export default function CreateAccount() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px', border: '2px solid var(--green)'
           }}>
-            <span style={{ fontSize: 32, color: 'var(--green)' }}>✓</span>
+            <Check size={30} color="var(--green)" />
           </div>
           <h2 style={{
             fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
@@ -221,8 +222,8 @@ export default function CreateAccount() {
             onClick={() => navigate('/login')}
             style={{
               width: '100%', padding: 14, background: 'var(--green)',
-              color: 'var(--bg)', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
-              border: 'none', borderRadius: 8, cursor: 'pointer', letterSpacing: 2
+              color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
+              border: 'none', borderRadius: 0, cursor: 'pointer', letterSpacing: 2
             }}
           >
             FAZER LOGIN
@@ -239,7 +240,7 @@ export default function CreateAccount() {
         padding: '40px 20px'
       }}>
         <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--red)' }}><AlertTriangle size={42} /></div>
           <h2 style={{
             fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
             color: 'var(--red)', letterSpacing: 1, marginBottom: 8
@@ -253,8 +254,8 @@ export default function CreateAccount() {
             onClick={() => navigate('/')}
             style={{
               width: '100%', padding: 14, background: 'var(--green)',
-              color: 'var(--bg)', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
-              border: 'none', borderRadius: 8, cursor: 'pointer', letterSpacing: 2
+              color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
+              border: 'none', borderRadius: 0, cursor: 'pointer', letterSpacing: 2
             }}
           >
             VOLTAR AO INÍCIO
@@ -277,7 +278,7 @@ export default function CreateAccount() {
           margin: '0 auto 16px', animation: 'bounceIn .5s ease-out',
           border: '2px solid var(--green)'
         }}>
-          <span style={{ fontSize: 32, color: 'var(--green)' }}>✓</span>
+          <Check size={30} color="var(--green)" />
         </div>
 
         <h2 style={{
@@ -313,8 +314,8 @@ export default function CreateAccount() {
               />
               <span style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 16, color: 'var(--green)'
-              }}>🔒</span>
+                display: 'flex', color: 'var(--green)'
+              }}><Lock size={15} /></span>
             </div>
             <span style={{ fontSize: 11, color: 'var(--text3)' }}>
               E-mail vinculado ao pagamento (não pode ser alterado)
@@ -345,9 +346,9 @@ export default function CreateAccount() {
             style={{
               width: '100%', padding: 14, marginTop: 8,
               background: loading ? 'var(--bg3)' : 'var(--green)',
-              color: loading ? 'var(--text3)' : 'var(--bg)',
+              color: loading ? 'var(--text3)' : '#fff',
               fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-head)',
-              border: 'none', borderRadius: 8,
+              border: 'none', borderRadius: 0,
               cursor: loading ? 'not-allowed' : 'pointer',
               letterSpacing: 2, transition: 'all .2s'
             }}

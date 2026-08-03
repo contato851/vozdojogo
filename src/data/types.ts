@@ -6,10 +6,6 @@ export interface Player {
   redCard?: boolean;
   goals?: number;
   subIn?: boolean;
-  // Optional enrichment from API-Football (present when player came from "Buscar elenco real")
-  position?: string;
-  age?: number | null;
-  photo?: string;
 }
 
 export interface Team {
@@ -87,7 +83,15 @@ export interface TeamDBEntry {
   accent: string;
 }
 
-export interface StateEntry {
-  state: string;
-  teams: TeamDBEntry[];
+export type CompetitionCategory = 'nacional' | 'regional_estadual' | 'internacional';
+
+export interface Competition {
+  id: string;
+  name: string;
+  category: CompetitionCategory;
+  order: number;
+  // References TeamDBEntry.name in TEAMS — the many-to-many link. A team can
+  // appear in more than one Competition's teamNames at once (its estadual and
+  // the Brasileirão, for example).
+  teamNames: string[];
 }

@@ -1,3 +1,4 @@
+import { Lock, RefreshCw } from 'lucide-react';
 import Logo from './Logo';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '../context/AuthContext';
@@ -25,9 +26,9 @@ export default function PaywallScreen() {
 
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)', padding: '32px 24px', marginBottom: 20
+          borderRadius: 0, padding: '32px 24px', marginBottom: 20
         }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--text2)' }}><Lock size={40} /></div>
           <div style={{
             fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700,
             letterSpacing: 2, color: 'var(--text)', marginBottom: 8
@@ -43,9 +44,9 @@ export default function PaywallScreen() {
             disabled={loading}
             style={{
               width: '100%', padding: 14, marginBottom: 10, background: 'var(--green)',
-              color: 'var(--bg)', fontSize: 16, fontWeight: 700,
+              color: '#fff', fontSize: 16, fontWeight: 700,
               fontFamily: 'var(--font-body)', border: 'none',
-              borderRadius: 'var(--radius)', cursor: loading ? 'not-allowed' : 'pointer',
+              borderRadius: 0, cursor: loading ? 'not-allowed' : 'pointer',
               letterSpacing: 1, transition: 'all .2s',
               opacity: loading ? 0.5 : 1
             }}
@@ -59,10 +60,11 @@ export default function PaywallScreen() {
               width: '100%', padding: 12, background: 'var(--bg3)',
               color: 'var(--text2)', fontSize: 13, fontWeight: 600,
               fontFamily: 'var(--font-body)', border: '1px solid var(--border2)',
-              borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all .2s'
+              borderRadius: 0, cursor: 'pointer', transition: 'all .2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
             }}
           >
-            🔄 Já paguei — verificar novamente
+            <RefreshCw size={13} /> Já paguei — verificar novamente
           </button>
         </div>
 

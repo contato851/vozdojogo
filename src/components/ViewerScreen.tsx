@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Goal, RadioTower, Square, ArrowUp, ArrowRight } from 'lucide-react';
+import SoccerBall from './icons/SoccerBall';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
@@ -62,7 +64,7 @@ export default function ViewerScreen() {
         minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⚽</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--green)' }}><Goal size={36} /></div>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, letterSpacing: 3, color: 'var(--green)' }}>
             CARREGANDO...
           </div>
@@ -78,7 +80,7 @@ export default function ViewerScreen() {
         minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--red)' }}><RadioTower size={44} /></div>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, letterSpacing: 3, color: 'var(--red)', marginBottom: 8 }}>
             TRANSMISSÃO ENCERRADA
           </div>
@@ -102,17 +104,22 @@ export default function ViewerScreen() {
       }}>
         <Logo size="sm" />
         <span style={{
+          display: 'flex', alignItems: 'center', gap: 4,
           fontSize: 9, letterSpacing: 1,
-          background: 'rgba(255,61,61,0.15)', padding: '2px 8px', borderRadius: 3,
-          border: '1px solid rgba(255,61,61,0.3)', color: 'var(--red)'
+          background: 'rgba(214,40,34,0.1)', padding: '2px 8px', borderRadius: 0,
+          border: '1px solid rgba(214,40,34,0.25)', color: 'var(--red)'
         }}>
-          ● AO VIVO
+          <span style={{
+            display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+            background: 'var(--red)', animation: 'pulse 1.5s infinite'
+          }} />
+          AO VIVO
         </span>
       </div>
 
       {/* Scoreboard */}
       <div style={{
-        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
         padding: '24px 20px', marginBottom: 14
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 20 }}>
@@ -158,7 +165,7 @@ export default function ViewerScreen() {
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               background: 'var(--bg2)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius)', overflow: 'hidden'
+              borderRadius: 0, overflow: 'hidden'
             }}>
               <div style={{
                 padding: '10px 14px', background: team?.color || 'var(--bg3)',
@@ -185,10 +192,18 @@ export default function ViewerScreen() {
                       color: team?.accent, minWidth: 28
                     }}>{p.number}</span>
                     <span style={{ fontWeight: 500 }}>{p.name}</span>
-                    {(p.yellowCards || 0) > 0 && <span style={{ fontSize: 10 }}>🟨{(p.yellowCards || 0) > 1 ? `×${p.yellowCards}` : ''}</span>}
-                    {p.redCard && <span style={{ fontSize: 10 }}>🟥</span>}
-                    {(p.goals || 0) > 0 && <span style={{ fontSize: 10 }}>⚽{(p.goals || 0) > 1 ? `×${p.goals}` : ''}</span>}
-                    {p.subIn && <span style={{ fontSize: 9, color: 'var(--green)' }}>▲</span>}
+                    {(p.yellowCards || 0) > 0 && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 10 }}>
+                        <Square size={9} fill="var(--yellow-card)" stroke="none" />{(p.yellowCards || 0) > 1 ? `×${p.yellowCards}` : ''}
+                      </span>
+                    )}
+                    {p.redCard && <Square size={9} fill="var(--red)" stroke="none" />}
+                    {(p.goals || 0) > 0 && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 10, color: 'var(--green)' }}>
+                        <SoccerBall size={11} />{(p.goals || 0) > 1 ? `×${p.goals}` : ''}
+                      </span>
+                    )}
+                    {p.subIn && <ArrowUp size={11} color="var(--green)" />}
                   </div>
                 ))}
 
@@ -201,7 +216,7 @@ export default function ViewerScreen() {
                       <div key={i} style={{ fontSize: 11, color: 'var(--text3)', padding: '2px 0' }}>
                         <span style={{ fontFamily: 'var(--font-head)', minWidth: 28, display: 'inline-block' }}>{p.number}</span>
                         <span>{p.name}</span>
-                        <span style={{ color: 'var(--text3)', fontSize: 9, marginLeft: 4 }}>→ {p.replacedBy}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--text3)', fontSize: 9, marginLeft: 4 }}><ArrowRight size={9} /> {p.replacedBy}</span>
                       </div>
                     ))}
                   </>
@@ -215,7 +230,7 @@ export default function ViewerScreen() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                       {team.reserves.map((r: any, j: number) => (
                         <span key={j} style={{
-                          background: 'var(--bg3)', padding: '2px 6px', borderRadius: 3,
+                          background: 'var(--bg3)', padding: '2px 6px', borderRadius: 0,
                           fontSize: 10, color: 'var(--text2)'
                         }}>
                           {r.number} {r.name}
@@ -240,11 +255,11 @@ export default function ViewerScreen() {
       {/* Goals timeline */}
       {liveState.goalLog.length > 0 && (
         <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
           padding: '12px 16px', marginTop: 14
         }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
-            ⚽ GOLS
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
+            <SoccerBall size={11} /> GOLS
           </div>
           {liveState.goalLog.map((g, i) => (
             <div key={i} style={{

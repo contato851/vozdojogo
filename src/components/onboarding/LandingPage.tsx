@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import { Users, Target, Activity, Play } from 'lucide-react';
 import Logo from '../Logo';
 
 const benefits = [
-  { emoji: '⚽', title: 'Monte a escalação em segundos', desc: 'Selecione o time, preencha os jogadores e pronto.' },
-  { emoji: '📊', title: 'Campo tático interativo', desc: 'Arraste os jogadores no campo. Veja a formação em tempo real.' },
-  { emoji: '🔴', title: 'Controle total ao vivo', desc: 'Gols, cartões, substituições e cronômetro. Tudo com um clique.' },
+  { icon: Users, title: 'Monte a escalação em segundos', desc: 'Selecione o time, preencha os jogadores e pronto.' },
+  { icon: Target, title: 'Campo tático interativo', desc: 'Arraste os jogadores no campo. Veja a formação em tempo real.' },
+  { icon: Activity, title: 'Controle total ao vivo', desc: 'Gols, cartões, substituições e cronômetro. Tudo com um clique.' },
 ];
 
 export default function LandingPage() {
@@ -45,10 +46,10 @@ export default function LandingPage() {
         }}>
           {benefits.map((b, i) => (
             <div key={i} style={{
-              background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12,
+              background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
               padding: '24px 20px', textAlign: 'center'
             }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>{b.emoji}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: 'var(--green)' }}><b.icon size={28} /></div>
               <div style={{
                 fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 600,
                 color: 'var(--green)', letterSpacing: 1, marginBottom: 6
@@ -60,7 +61,7 @@ export default function LandingPage() {
 
         {/* Video teaser */}
         <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 16,
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
           padding: '0', marginBottom: 40, overflow: 'hidden', maxWidth: 560,
           marginLeft: 'auto', marginRight: 'auto'
         }}>
@@ -77,9 +78,9 @@ export default function LandingPage() {
               <div style={{
                 width: 64, height: 64, borderRadius: '50%', background: 'var(--green)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(0, 255, 135, 0.3)', cursor: 'pointer'
+                boxShadow: '0 4px 14px rgba(0,122,67,0.3)', cursor: 'pointer'
               }}>
-                <span style={{ fontSize: 28, color: 'var(--bg)', marginLeft: 4 }}>▶</span>
+                <Play size={26} fill="#fff" color="#fff" style={{ marginLeft: 3 }} />
               </div>
               <span style={{
                 fontFamily: 'var(--font-head)', fontSize: 13, color: 'var(--text2)',
@@ -102,7 +103,7 @@ export default function LandingPage() {
         {/* Price card */}
         <div style={{
           background: 'var(--bg2)', border: '2px solid var(--green)',
-          borderRadius: 16, padding: '32px 28px', maxWidth: 380,
+          borderRadius: 0, padding: '32px 28px', maxWidth: 380,
           margin: '0 auto 32px', textAlign: 'center'
         }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: 4 }}>
@@ -118,8 +119,8 @@ export default function LandingPage() {
             onClick={() => navigate('/onboarding/1')}
             style={{
               width: '100%', padding: 16, background: 'var(--green)',
-              color: 'var(--bg)', fontSize: 20, fontWeight: 700,
-              fontFamily: 'var(--font-head)', border: 'none', borderRadius: 8,
+              color: '#fff', fontSize: 20, fontWeight: 700,
+              fontFamily: 'var(--font-head)', border: 'none', borderRadius: 0,
               cursor: 'pointer', letterSpacing: 2, transition: 'all .2s'
             }}
             onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}

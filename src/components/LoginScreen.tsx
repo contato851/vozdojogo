@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,7 +37,7 @@ export default function LoginScreen() {
       setShake(true);
       setTimeout(() => setShake(false), 400);
     } else {
-      setMsg({ text: '✓ Login realizado!', type: 'success' });
+      setMsg({ text: 'Login realizado!', type: 'success' });
     }
     setSubmitting(false);
   };
@@ -70,7 +71,7 @@ export default function LoginScreen() {
           className={shake ? 'shake-anim' : ''}
           style={{
             width: '100%', background: 'var(--bg2)', border: '2px solid var(--border2)',
-            borderRadius: 'var(--radius)', padding: '14px 18px', color: 'var(--text)',
+            borderRadius: 0, padding: '14px 18px', color: 'var(--text)',
             fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
             marginBottom: 10, transition: 'border-color .3s'
           }}
@@ -84,7 +85,7 @@ export default function LoginScreen() {
           className={shake ? 'shake-anim' : ''}
           style={{
             width: '100%', background: 'var(--bg2)', border: '2px solid var(--border2)',
-            borderRadius: 'var(--radius)', padding: '14px 18px', color: 'var(--text)',
+            borderRadius: 0, padding: '14px 18px', color: 'var(--text)',
             fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
             marginBottom: 10, transition: 'border-color .3s'
           }}
@@ -94,8 +95,8 @@ export default function LoginScreen() {
           disabled={submitting}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
-            color: 'var(--bg)', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
-            border: 'none', borderRadius: 'var(--radius)', cursor: submitting ? 'not-allowed' : 'pointer',
+            color: '#fff', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
+            border: 'none', borderRadius: 0, cursor: submitting ? 'not-allowed' : 'pointer',
             transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
@@ -104,9 +105,11 @@ export default function LoginScreen() {
 
         {msg && (
           <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
             marginTop: 12, fontSize: 13, minHeight: 20,
             color: msg.type === 'error' ? 'var(--red)' : 'var(--green)'
           }}>
+            {msg.type === 'success' && <Check size={14} />}
             {msg.text}
           </div>
         )}
@@ -114,7 +117,7 @@ export default function LoginScreen() {
         {/* CTA for non-subscribers */}
         <div style={{
           marginTop: 32, padding: '20px 16px', background: 'var(--bg2)',
-          border: '1px solid var(--border)', borderRadius: 8
+          border: '1px solid var(--border)', borderRadius: 0
         }}>
           <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
             Ainda não tem acesso?
@@ -125,10 +128,10 @@ export default function LoginScreen() {
               width: '100%', padding: 12, background: 'none',
               border: '2px solid var(--green)', color: 'var(--green)',
               fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-head)',
-              borderRadius: 8, cursor: 'pointer', letterSpacing: 1,
+              borderRadius: 0, cursor: 'pointer', letterSpacing: 1,
               transition: 'all .2s'
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--green)'; e.currentTarget.style.color = 'var(--bg)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--green)'; e.currentTarget.style.color = '#fff'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--green)'; }}
           >
             ASSINAR POR R$14,90/MÊS

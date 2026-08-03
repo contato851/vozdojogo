@@ -1,17 +1,19 @@
+import { LucideIcon } from 'lucide-react';
+
 interface SelectableCardProps {
-  emoji: string;
+  icon: LucideIcon;
   label: string;
   selected: boolean;
   onClick: () => void;
 }
 
-export default function SelectableCard({ emoji, label, selected, onClick }: SelectableCardProps) {
+export default function SelectableCard({ icon: Icon, label, selected, onClick }: SelectableCardProps) {
   return (
     <button
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        width: '100%', padding: '16px 20px', borderRadius: 10,
+        width: '100%', padding: '16px 20px', borderRadius: 0,
         background: selected ? 'var(--green-dim)' : 'var(--bg2)',
         border: `2px solid ${selected ? 'var(--green)' : 'var(--border)'}`,
         color: selected ? 'var(--green)' : 'var(--text)',
@@ -19,7 +21,7 @@ export default function SelectableCard({ emoji, label, selected, onClick }: Sele
         fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500
       }}
     >
-      <span style={{ fontSize: 22, flexShrink: 0 }}>{emoji}</span>
+      <Icon size={20} style={{ flexShrink: 0 }} />
       <span>{label}</span>
     </button>
   );
