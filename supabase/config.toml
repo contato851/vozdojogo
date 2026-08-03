@@ -1,4 +1,4 @@
-project_id = "ltxdrvhntfbxcxywdcxy"
+project_id = "pkqjareakzazzwttxqjl"
 
 [functions.create-onboarding-checkout]
 verify_jwt = false
@@ -7,4 +7,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.retrieve-checkout-email]
+verify_jwt = false
+
+[functions.sync-team-squads]
 verify_jwt = false
