@@ -85,6 +85,14 @@
     padding: 0;
   }
 
+  /* O preflight do Tailwind força svg a display:block, o que quebra ícones
+     lucide-react usados dentro de texto corrido (fora de um container flex).
+     Volta pro comportamento inline esperado por padrão. */
+  svg.lucide {
+    display: inline;
+    vertical-align: middle;
+  }
+
   body {
     font-family: var(--font-body);
     background: var(--bg);

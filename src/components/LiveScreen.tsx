@@ -356,15 +356,14 @@ export default function LiveScreen() {
       )}
 
       {/* Hint */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4, marginBottom: 10, fontSize: 10, color: 'var(--text3)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 10, fontSize: 10, color: 'var(--text3)', lineHeight: 1.6 }}>
         {liveView === 'field' ? (
-          <span>Visualização tática · Eventos e substituições na vista Lista</span>
+          'Visualização tática · Eventos e substituições na vista Lista'
         ) : (
           <>
-            <Square size={9} fill="var(--yellow-card)" stroke="none" />
-            <Square size={9} fill="var(--red)" stroke="none" />
-            ⚽
-            <span>Ícones para marcar eventos · Nome ou <ChevronsUpDown size={10} style={{ verticalAlign: 'middle' }} /> para substituir · Clique direito no ⚽ remove gol</span>
+            <Square size={9} fill="var(--yellow-card)" stroke="none" style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}
+            <Square size={9} fill="var(--red)" stroke="none" style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}
+            ⚽ Ícones para marcar eventos · Nome ou <ChevronsUpDown size={10} style={{ display: 'inline', verticalAlign: 'middle' }} /> para substituir · Clique direito no ⚽ remove gol
           </>
         )}
       </div>
