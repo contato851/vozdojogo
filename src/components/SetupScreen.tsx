@@ -360,21 +360,17 @@ export default function SetupScreen() {
           {/* Team A */}
           <div
             onClick={() => setPickerTeam('teamA')}
+            title="Clique para trocar"
             style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              cursor: 'pointer', padding: 16, borderRadius: 0, border: '1px solid var(--border)',
-              background: match.teamA.name ? 'var(--bg2)' : 'var(--bg3)',
-              transition: 'all .2s', position: 'relative'
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+              cursor: 'pointer', padding: 8, minHeight: 130,
+              transition: 'opacity .2s', position: 'relative'
             }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             {match.teamA.name ? (
-              <>
-                <LiveTeamLogo teamName={match.teamA.name} size={56} />
-                <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: match.teamA.accent, textAlign: 'center' }}>
-                  {match.teamA.name}
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1 }}>CLIQUE PARA TROCAR</span>
-              </>
+              <LiveTeamLogo teamName={match.teamA.name} size={110} />
             ) : (
               <>
                 <div style={{
@@ -388,30 +384,26 @@ export default function SetupScreen() {
             )}
           </div>
 
-          {/* VS */}
+          {/* X */}
           <div style={{
             fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 700, color: 'var(--text3)',
-            letterSpacing: 4, flexShrink: 0
-          }}>VS</div>
+            flexShrink: 0
+          }}>X</div>
 
           {/* Team B */}
           <div
             onClick={() => setPickerTeam('teamB')}
+            title="Clique para trocar"
             style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              cursor: 'pointer', padding: 16, borderRadius: 0, border: '1px solid var(--border)',
-              background: match.teamB.name ? 'var(--bg2)' : 'var(--bg3)',
-              transition: 'all .2s', position: 'relative'
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+              cursor: 'pointer', padding: 8, minHeight: 130,
+              transition: 'opacity .2s', position: 'relative'
             }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             {match.teamB.name ? (
-              <>
-                <LiveTeamLogo teamName={match.teamB.name} size={56} />
-                <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: match.teamB.accent, textAlign: 'center' }}>
-                  {match.teamB.name}
-                </span>
-                <span style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1 }}>CLIQUE PARA TROCAR</span>
-              </>
+              <LiveTeamLogo teamName={match.teamB.name} size={110} />
             ) : (
               <>
                 <div style={{
