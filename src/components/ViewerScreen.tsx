@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Goal, RadioTower, Square, ArrowUp, ArrowRight } from 'lucide-react';
-import SoccerBall from './icons/SoccerBall';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
@@ -200,7 +199,7 @@ export default function ViewerScreen() {
                     {p.redCard && <Square size={9} fill="var(--red)" stroke="none" />}
                     {(p.goals || 0) > 0 && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 10, color: 'var(--green)' }}>
-                        <SoccerBall size={11} />{(p.goals || 0) > 1 ? `×${p.goals}` : ''}
+                        ⚽{(p.goals || 0) > 1 ? `×${p.goals}` : ''}
                       </span>
                     )}
                     {p.subIn && <ArrowUp size={11} color="var(--green)" />}
@@ -259,7 +258,7 @@ export default function ViewerScreen() {
           padding: '12px 16px', marginTop: 14
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
-            <SoccerBall size={11} /> GOLS
+            ⚽ GOLS
           </div>
           {liveState.goalLog.map((g, i) => (
             <div key={i} style={{

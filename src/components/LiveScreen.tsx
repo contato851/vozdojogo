@@ -4,7 +4,6 @@ import {
   Square, List, Target, ChevronsUpDown, ArrowLeftRight, ArrowUp,
   ArrowDown, ArrowRight, RefreshCw, NotebookPen,
 } from 'lucide-react';
-import SoccerBall from './icons/SoccerBall';
 import { useApp } from '../context/AppContext';
 import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
@@ -293,7 +292,7 @@ export default function LiveScreen() {
             <div style={{ flex: 1, textAlign: 'center' }}>
               {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  <SoccerBall size={12} /> <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
                 </div>
               ))}
             </div>
@@ -301,7 +300,7 @@ export default function LiveScreen() {
             <div style={{ flex: 1, textAlign: 'center' }}>
               {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  <SoccerBall size={12} /> <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
                 </div>
               ))}
             </div>
@@ -364,8 +363,8 @@ export default function LiveScreen() {
           <>
             <Square size={9} fill="var(--yellow-card)" stroke="none" />
             <Square size={9} fill="var(--red)" stroke="none" />
-            <SoccerBall size={11} />
-            <span>Ícones para marcar eventos · Nome ou <ChevronsUpDown size={10} style={{ verticalAlign: 'middle' }} /> para substituir · Clique direito no <SoccerBall size={11} style={{ verticalAlign: 'middle' }} /> remove gol</span>
+            ⚽
+            <span>Ícones para marcar eventos · Nome ou <ChevronsUpDown size={10} style={{ verticalAlign: 'middle' }} /> para substituir · Clique direito no ⚽ remove gol</span>
           </>
         )}
       </div>
@@ -555,7 +554,7 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
                   onClick={e => { e.stopPropagation(); addGoal(tk, idx); }}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeGoal(tk, idx); }}
                 >
-                  <SoccerBall size={13} />{(p.goals || 0) > 0 && <span className="ev-count">{p.goals}</span>}
+                  ⚽{(p.goals || 0) > 0 && <span className="ev-count">{p.goals}</span>}
                 </EvBtn>
               </div>
               {hasR && (
@@ -722,7 +721,7 @@ function TacticalField({ ls, setLiveState, match }: { ls: LiveState; setLiveStat
     const items: React.ReactNode[] = [];
     if ((p.goals || 0) > 0) items.push(
       <span key="g" style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-        <SoccerBall size={9} />{(p.goals || 0) > 1 ? `×${p.goals}` : ''}
+        ⚽{(p.goals || 0) > 1 ? `×${p.goals}` : ''}
       </span>
     );
     if ((p.yellowCards || 0) > 0) items.push(
