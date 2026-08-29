@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 
-function NoteTeamLogo({ teamName, color, accent, size = 38 }: { teamName: string; color: string; accent: string; size?: number }) {
-  const { logoUrl, loading } = useTeamLogo(teamName, false);
+function NoteTeamLogo({ teamName, color, accent, size = 38, logo }: { teamName: string; color: string; accent: string; size?: number; logo?: string | null }) {
+  const { logoUrl, loading } = useTeamLogo(teamName, false, logo);
   const [err, setErr] = useState(false);
 
   if (logoUrl && !err) {

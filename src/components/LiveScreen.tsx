@@ -17,8 +17,8 @@ import {
 } from '../data/broadcast';
 
 // Small inline logo for live screen
-function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName, false);
+function LiveTeamLogo({ teamName, size = 38, logo }: { teamName: string; size?: number; logo?: string | null }) {
+  const { logoUrl } = useTeamLogo(teamName, false, logo);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (

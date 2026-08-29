@@ -186,7 +186,7 @@ export function useTeamLogo(teamName: string, isNationalTeam: boolean, overrideU
       setLogoUrl(url);
       setLoading(false);
     });
-  }, [teamName, isNationalTeam]);
+  }, [teamName, isNationalTeam, overrideUrl]);
 
   return { logoUrl, loading };
 }
