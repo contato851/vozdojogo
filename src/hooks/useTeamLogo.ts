@@ -144,18 +144,25 @@ export function getTeamLogoUrl(teamName: string, isNationalTeam: boolean): strin
   return cache[teamName] !== undefined ? cache[teamName] : null;
 }
 
-export function useTeamLogo(teamName: string, isNationalTeam: boolean) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(() => 
-    getTeamLogoUrl(teamName, isNationalTeam)
+export function useTeamLogo(teamName: string, isNationalTeam: boolean, overrideUrl?: string | null) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(() =>
+    overrideUrl || getTeamLogoUrl(teamName, isNationalTeam)
   );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (overrideUrl) {
+      setLogoUrl(overrideUrl);
+      setLoading(false);
+      return;
+    }
+
     if (isNationalTeam) {
       const code = COUNTRY_FLAGS[teamName];
       setLogoUrl(code ? `${FLAG_CDN}/${code}.png` : null);
       return;
     }
+
 
     const cache = getLogoCache();
     if (cache[teamName] !== undefined) {
