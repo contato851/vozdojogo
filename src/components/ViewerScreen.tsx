@@ -124,7 +124,7 @@ export default function ViewerScreen() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 20 }}>
           <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isMobile ? (
-              <ViewerTeamLogo teamName={teamA?.name || ''} size={56} />
+              <ViewerTeamLogo teamName={teamA?.name || ''} logo={teamA?.logo} size={56} />
             ) : (
               <div style={{
                 fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,
@@ -142,7 +142,7 @@ export default function ViewerScreen() {
           </div>
           <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isMobile ? (
-              <ViewerTeamLogo teamName={teamB?.name || ''} size={56} />
+              <ViewerTeamLogo teamName={teamB?.name || ''} logo={teamB?.logo} size={56} />
             ) : (
               <div style={{
                 fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700,

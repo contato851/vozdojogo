@@ -50,7 +50,7 @@ export default function NotesScreen() {
                 borderTop: `3px solid ${t.color}`
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <NoteTeamLogo teamName={t.name} color={t.color} accent={t.accent} size={38} />
+                  <NoteTeamLogo teamName={t.name} logo={t.logo} color={t.color} accent={t.accent} size={38} />
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>{t.name || 'TIME'}</div>
                     <div style={{ fontSize: 10, color: 'var(--text3)' }}>Curiosidades e anotações</div>

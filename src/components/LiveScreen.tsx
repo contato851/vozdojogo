@@ -240,7 +240,7 @@ export default function LiveScreen() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {/* Team A */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <LiveTeamLogo teamName={tA.name} size={80} />
+            <LiveTeamLogo teamName={tA.name} logo={tA.logo} size={80} />
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsA}
             </div>
@@ -282,7 +282,7 @@ export default function LiveScreen() {
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsB}
             </div>
-            <LiveTeamLogo teamName={tB.name} size={80} />
+            <LiveTeamLogo teamName={tB.name} logo={tB.logo} size={80} />
           </div>
         </div>
 
@@ -505,7 +505,7 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
   return (
     <div>
       <div style={{ padding: '12px 16px', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: team.color }}>
-        <LiveTeamLogo teamName={team.name} size={28} />
+        <LiveTeamLogo teamName={team.name} logo={team.logo} size={28} />
         <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700, letterSpacing: 3, color: team.accent }}>{team.name}</span>
       </div>
       <div style={{ background: c('var(--bg3)', 'rgba(0,0,0,0.3)'), borderRadius: 0 }}>
