@@ -8,7 +8,7 @@ import TeamLogo from './TeamLogo';
 import CustomTeamEditor from './CustomTeamEditor';
 
 interface TeamPickerProps {
-  onSelect: (team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => void;
+  onSelect: (team: { name: string; color: string; accent: string; logo?: string | null; customPlayers?: { number: string; name: string }[] }) => void;
   onClose: () => void;
 }
 
@@ -62,6 +62,7 @@ export default function TeamPicker({ onSelect, onClose }: TeamPickerProps) {
       name: ct.name,
       color: ct.color,
       accent: ct.accent,
+      logo: ct.logo_url,
       customPlayers: ct.players,
     });
   };

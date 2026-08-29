@@ -11,6 +11,7 @@ export interface Player {
 export interface Team {
   name: string;
   coach: string;
+  logo?: string | null;
   color: string;
   accent: string;
   formation: string;
