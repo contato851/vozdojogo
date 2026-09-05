@@ -108,13 +108,19 @@ export function getTeamLogoUrl(teamName: string): string | null {
   return cache[teamName] !== undefined ? cache[teamName] : null;
 }
 
-export function useTeamLogo(teamName: string) {
+export function useTeamLogo(teamName: string, overrideUrl?: string | null) {
   const [logoUrl, setLogoUrl] = useState<string | null>(() =>
-    getTeamLogoUrl(teamName)
+    overrideUrl || getTeamLogoUrl(teamName)
   );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (overrideUrl) {
+      setLogoUrl(overrideUrl);
+      setLoading(false);
+      return;
+    }
+
     const cache = getLogoCache();
     if (cache[teamName] !== undefined) {
       setLogoUrl(cache[teamName]);
@@ -137,7 +143,7 @@ export function useTeamLogo(teamName: string) {
       setLogoUrl(url);
       setLoading(false);
     });
-  }, [teamName]);
+  }, [teamName, overrideUrl]);
 
   return { logoUrl, loading };
 }

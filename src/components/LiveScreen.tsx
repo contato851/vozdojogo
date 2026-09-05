@@ -15,8 +15,8 @@ import {
 } from '../data/broadcast';
 
 // Small inline logo for live screen
-function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName);
+function LiveTeamLogo({ teamName, size = 38, logo }: { teamName: string; size?: number; logo?: string | null }) {
+  const { logoUrl } = useTeamLogo(teamName, logo);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (
@@ -245,7 +245,7 @@ export default function LiveScreen() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {/* Team A */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <LiveTeamLogo teamName={tA.name} size={80} />
+            <LiveTeamLogo teamName={tA.name} logo={tA.logo} size={80} />
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsA}
             </div>
@@ -287,7 +287,7 @@ export default function LiveScreen() {
             <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsB}
             </div>
-            <LiveTeamLogo teamName={tB.name} size={80} />
+            <LiveTeamLogo teamName={tB.name} logo={tB.logo} size={80} />
           </div>
         </div>
 
@@ -585,7 +585,7 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
           <div style={{ flex: 1, background: team.accent }} />
         </div>
         <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <LiveTeamLogo teamName={team.name} size={28} />
+          <LiveTeamLogo teamName={team.name} logo={team.logo} size={28} />
           <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700, letterSpacing: 3, color: '#030016' }}>{team.name}</span>
         </div>
       </div>

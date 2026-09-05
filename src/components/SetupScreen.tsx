@@ -12,8 +12,8 @@ import TeamPicker from './TeamPicker';
 import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
 import { useSavedLineups } from '../hooks/useSavedLineups';
 
-function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName);
+function LiveTeamLogo({ teamName, size = 38, logo }: { teamName: string; size?: number; logo?: string | null }) {
+  const { logoUrl } = useTeamLogo(teamName, logo);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (
@@ -159,7 +159,7 @@ export default function SetupScreen() {
     });
   };
 
-  const selectTeam = (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; customPlayers?: { number: string; name: string }[] }) => {
+  const selectTeam = (tk: 'teamA' | 'teamB', team: { name: string; color: string; accent: string; logo?: string | null; customPlayers?: { number: string; name: string }[] }) => {
     setPickerTeam(null);
     setLineupError(null);
 
@@ -171,6 +171,7 @@ export default function SetupScreen() {
         [tk]: {
           ...m[tk],
           name: team.name,
+          logo: team.logo ?? null,
           color: team.color,
           accent: team.accent,
           starters,
@@ -192,6 +193,7 @@ export default function SetupScreen() {
       [tk]: {
         ...m[tk],
         name: team.name,
+        logo: team.logo ?? null,
         color: team.color,
         accent: team.accent,
         starters,
@@ -316,7 +318,7 @@ export default function SetupScreen() {
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             {match.teamA.name ? (
-              <LiveTeamLogo teamName={match.teamA.name} size={110} />
+              <LiveTeamLogo teamName={match.teamA.name} logo={match.teamA.logo} size={110} />
             ) : (
               <>
                 <div style={{
@@ -349,7 +351,7 @@ export default function SetupScreen() {
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             {match.teamB.name ? (
-              <LiveTeamLogo teamName={match.teamB.name} size={110} />
+              <LiveTeamLogo teamName={match.teamB.name} logo={match.teamB.logo} size={110} />
             ) : (
               <>
                 <div style={{
@@ -431,7 +433,7 @@ export default function SetupScreen() {
                     padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                     background: hasTeam ? '#fff' : 'var(--bg3)'
                   }}>
-                    {hasTeam && <LiveTeamLogo teamName={team.name} size={28} />}
+                    {hasTeam && <LiveTeamLogo teamName={team.name} logo={team.logo} size={28} />}
                     <span style={{
                       fontFamily: 'var(--font-head)', fontSize: hasTeam ? 22 : 16, fontWeight: 700,
                       letterSpacing: 3, color: hasTeam ? '#030016' : 'var(--text3)'
