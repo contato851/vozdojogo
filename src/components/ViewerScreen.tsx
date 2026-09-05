@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Goal, RadioTower, Square, ArrowUp, ArrowRight } from 'lucide-react';
 import { fetchBroadcast, subscribeToBroadcast } from '../data/broadcast';
+import { formatClock, getClockElapsed } from '../data/store';
 import { LiveState } from '../data/types';
 import Logo from './Logo';
 import { useIsMobile } from '../hooks/use-mobile';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 
 function ViewerTeamLogo({ teamName, size = 48 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName, false);
+  const { logoUrl } = useTeamLogo(teamName);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (
@@ -29,6 +30,17 @@ export default function ViewerScreen() {
   const [matchData, setMatchData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clockDisplay, setClockDisplay] = useState('00:00');
+
+  useEffect(() => {
+    if (!liveState?.clock) return;
+    const tick = () => {
+      if (liveState?.clock) setClockDisplay(formatClock(getClockElapsed(liveState.clock)));
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [liveState?.clock?.running, liveState?.clock?.startedAt, liveState?.clock?.elapsed]);
 
   useEffect(() => {
     if (!shareCode) return;
@@ -105,7 +117,7 @@ export default function ViewerScreen() {
         <span style={{
           display: 'flex', alignItems: 'center', gap: 4,
           fontSize: 9, letterSpacing: 1,
-          background: 'rgba(214,40,34,0.1)', padding: '2px 8px', borderRadius: 0,
+          background: 'rgba(214,40,34,0.1)', padding: '2px 8px', borderRadius: 'var(--radius)',
           border: '1px solid rgba(214,40,34,0.25)', color: 'var(--red)'
         }}>
           <span style={{
@@ -116,9 +128,36 @@ export default function ViewerScreen() {
         </span>
       </div>
 
+      {/* Match info */}
+      {(() => {
+        const formattedDate = matchData?.matchDate
+          ? new Date(`${matchData.matchDate}T00:00:00`).toLocaleDateString('pt-BR')
+          : '';
+        const infos: [string, string][] = [
+          ['COMPETIÇÃO', matchData?.competition], ['RODADA', matchData?.round],
+          ['DATA', [formattedDate, matchData?.matchTime].filter(Boolean).join(' · ')],
+          ['ESTÁDIO', matchData?.stadium], ['ÁRBITRO', matchData?.referee],
+        ].filter(x => x[1]) as [string, string][];
+        if (infos.length === 0) return null;
+        return (
+          <div style={{
+            background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+            padding: '10px 16px', marginBottom: 14, display: 'flex', flexWrap: 'wrap',
+            justifyContent: 'center', gap: '10px 20px'
+          }}>
+            {infos.map(([l, v]) => (
+              <div key={l} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700 }}>{l}</div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Scoreboard */}
       <div style={{
-        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '24px 20px', marginBottom: 14
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 20 }}>
@@ -134,11 +173,19 @@ export default function ViewerScreen() {
               </div>
             )}
           </div>
-          <div style={{
-            fontFamily: 'var(--font-head)', fontSize: isMobile ? 40 : 52, fontWeight: 700,
-            color: 'var(--text)', letterSpacing: 4, minWidth: isMobile ? 80 : 120, textAlign: 'center'
-          }}>
-            {goalsA} × {goalsB}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isMobile ? 80 : 120 }}>
+            <div style={{
+              fontFamily: 'var(--font-head)', fontSize: isMobile ? 40 : 52, fontWeight: 700,
+              color: 'var(--text)', letterSpacing: 4, textAlign: 'center'
+            }}>
+              {goalsA} × {goalsB}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 600,
+              color: liveState.clock?.running ? 'var(--green)' : 'var(--text3)', letterSpacing: 2
+            }}>
+              {clockDisplay}
+            </div>
           </div>
           <div style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isMobile ? (
@@ -164,19 +211,31 @@ export default function ViewerScreen() {
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               background: 'var(--bg2)', border: '1px solid var(--border)',
-              borderRadius: 0, overflow: 'hidden'
+              borderRadius: 'var(--radius)', overflow: 'hidden'
             }}>
-              <div style={{
-                padding: '10px 14px', background: team?.color || 'var(--bg3)',
-                textAlign: 'center'
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700,
-                  letterSpacing: 3, color: team?.accent || 'var(--text)'
-                }}>
-                  {team?.name}
-                </span>
-              </div>
+              {team ? (
+                <div style={{ background: '#fff' }}>
+                  <div style={{ display: 'flex', height: 5 }}>
+                    <div style={{ flex: 1, background: team.color }} />
+                    <div style={{ flex: 1, background: team.accent }} />
+                  </div>
+                  <div style={{ padding: '10px 14px', textAlign: 'center' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700,
+                      letterSpacing: 3, color: '#030016'
+                    }}>
+                      {team.name}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '10px 14px', background: 'var(--bg3)', textAlign: 'center' }}>
+                  <span style={{
+                    fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700,
+                    letterSpacing: 3, color: 'var(--text)'
+                  }} />
+                </div>
+              )}
               <div style={{ padding: 12 }}>
                 <div style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
                   TITULARES
@@ -188,7 +247,7 @@ export default function ViewerScreen() {
                   }}>
                     <span style={{
                       fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14,
-                      color: team?.accent, minWidth: 28
+                      color: 'var(--text)', minWidth: 28
                     }}>{p.number}</span>
                     <span style={{ fontWeight: 500 }}>{p.name}</span>
                     {(p.yellowCards || 0) > 0 && (
@@ -229,7 +288,7 @@ export default function ViewerScreen() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                       {team.reserves.map((r: any, j: number) => (
                         <span key={j} style={{
-                          background: 'var(--bg3)', padding: '2px 6px', borderRadius: 0,
+                          background: 'var(--bg3)', padding: '2px 6px', borderRadius: 'var(--radius)',
                           fontSize: 10, color: 'var(--text2)'
                         }}>
                           {r.number} {r.name}
@@ -254,7 +313,7 @@ export default function ViewerScreen() {
       {/* Goals timeline */}
       {liveState.goalLog.length > 0 && (
         <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
           padding: '12px 16px', marginTop: 14
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>

@@ -26,7 +26,7 @@ export default function PaywallScreen() {
 
         <div style={{
           background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 0, padding: '32px 24px', marginBottom: 20
+          borderRadius: 'var(--radius)', padding: '32px 24px', marginBottom: 20
         }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--text2)' }}><Lock size={40} /></div>
           <div style={{
@@ -44,9 +44,9 @@ export default function PaywallScreen() {
             disabled={loading}
             style={{
               width: '100%', padding: 14, marginBottom: 10, background: 'var(--green)',
-              color: '#fff', fontSize: 16, fontWeight: 700,
+              color: 'var(--green-text)', fontSize: 16, fontWeight: 700,
               fontFamily: 'var(--font-body)', border: 'none',
-              borderRadius: 0, cursor: loading ? 'not-allowed' : 'pointer',
+              borderRadius: 'var(--radius)', cursor: loading ? 'not-allowed' : 'pointer',
               letterSpacing: 1, transition: 'all .2s',
               opacity: loading ? 0.5 : 1
             }}
@@ -60,7 +60,7 @@ export default function PaywallScreen() {
               width: '100%', padding: 12, background: 'var(--bg3)',
               color: 'var(--text2)', fontSize: 13, fontWeight: 600,
               fontFamily: 'var(--font-body)', border: '1px solid var(--border2)',
-              borderRadius: 0, cursor: 'pointer', transition: 'all .2s',
+              borderRadius: 'var(--radius)', cursor: 'pointer', transition: 'all .2s',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
             }}
           >
@@ -80,7 +80,7 @@ export default function PaywallScreen() {
         </button>
 
         <p style={{ color: 'var(--text3)', fontSize: 10, marginTop: 12 }}>
-          Pagamento seguro via Stripe. Cancele quando quiser.
+          Pagamento seguro via Mercado Pago. Cancele quando quiser.
         </p>
       </div>
     </div>

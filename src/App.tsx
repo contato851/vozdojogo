@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SubscriptionProvider, useSubscription } from './context/SubscriptionContext';
-import { OnboardingProvider } from './context/OnboardingContext';
 import { AppProvider } from './context/AppContext';
 import TopBar from './components/TopBar';
 import GraceBanner from './components/GraceBanner';
+import LandingPage from './components/LandingPage';
 import LoginScreen from './components/LoginScreen';
+import ResetPasswordScreen from './components/ResetPasswordScreen';
 import PaywallScreen from './components/PaywallScreen';
 import SetupScreen from './components/SetupScreen';
 import NotesScreen from './components/NotesScreen';
@@ -14,13 +15,6 @@ import ViewerScreen from './components/ViewerScreen';
 import SettingsScreen from './components/SettingsScreen';
 import NotFound from './pages/NotFound';
 import DemoLayout from './components/DemoLayout';
-
-// Onboarding components
-import LandingPage from './components/onboarding/LandingPage';
-import QualificationStep from './components/onboarding/QualificationStep';
-import ProfileSummary from './components/onboarding/ProfileSummary';
-import CreateAccount from './components/onboarding/CreateAccount';
-import FirstGameWizard from './components/onboarding/FirstGameWizard';
 
 function LoadingScreen() {
   return (
@@ -56,9 +50,9 @@ function SubscriptionGate() {
   const { subscribed, loading } = useSubscription();
 
   if (loading) return <LoadingScreen />;
-  // Paywall temporarily disabled — Stripe billing is being swapped for another
-  // payment provider, still TBD. Re-enable `if (!subscribed) return <PaywallScreen />;`
-  // once the new provider is wired up.
+  // Paywall temporarily disabled while the Mercado Pago billing backend is
+  // configured/tested end-to-end. Re-enable
+  // `if (!subscribed) return <PaywallScreen />;` once ready to charge for real.
 
   return (
     <AppProvider>
@@ -93,57 +87,36 @@ function ProtectedApp() {
   );
 }
 
-function SmartLanding() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <LoadingScreen />;
-  if (user) return <Navigate to="/escalacao" replace />;
-
-  return <LandingPage />;
-}
-
 function AppShell() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <OnboardingProvider>
-          <Routes>
-            {/* Public viewer route */}
-            <Route path="/ao-vivo/:shareCode" element={
-              <AppProvider>
-                <ViewerScreen />
-              </AppProvider>
-            } />
+        <Routes>
+          {/* Public viewer route */}
+          <Route path="/ao-vivo/:shareCode" element={
+            <AppProvider>
+              <ViewerScreen />
+            </AppProvider>
+          } />
 
-            {/* Public demo route - no auth/subscription required */}
-            <Route path="/demo/*" element={<DemoLayout />} />
+          {/* Public demo route - no auth/subscription required */}
+          <Route path="/demo/*" element={<DemoLayout />} />
 
-            {/* Landing page - redirects to app if already authenticated */}
-            <Route path="/" element={<SmartLanding />} />
+          {/* Landing page - entry point at "/", explains the product + login */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/redefinir-senha" element={<ResetPasswordScreen />} />
 
-            {/* Login for existing users */}
-            <Route path="/login" element={<LoginScreen />} />
+          {/* Settings - auth required */}
+          <Route path="/configuracoes" element={<ProtectedSettings />} />
 
-            {/* Onboarding routes */}
-            <Route path="/onboarding/1" element={<QualificationStep step={1} />} />
-            <Route path="/onboarding/2" element={<QualificationStep step={2} />} />
-            <Route path="/onboarding/3" element={<QualificationStep step={3} />} />
-            <Route path="/onboarding/4" element={<QualificationStep step={4} />} />
-            <Route path="/onboarding/resumo" element={<ProfileSummary />} />
-            <Route path="/onboarding/criar-conta" element={<CreateAccount />} />
-            <Route path="/onboarding/primeiro-jogo" element={<FirstGameWizard />} />
+          {/* App routes - auth + subscription required */}
+          <Route path="/escalacao" element={<ProtectedApp />} />
+          <Route path="/notas" element={<ProtectedApp />} />
+          <Route path="/ao-vivo" element={<ProtectedApp />} />
 
-            {/* Settings - auth required */}
-            <Route path="/configuracoes" element={<ProtectedSettings />} />
-
-            {/* App routes - auth + subscription required */}
-            <Route path="/escalacao" element={<ProtectedApp />} />
-            <Route path="/notas" element={<ProtectedApp />} />
-            <Route path="/ao-vivo" element={<ProtectedApp />} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </OnboardingProvider>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -41,7 +41,7 @@ export default function TopBar() {
             background: path === '/ao-vivo' ? 'rgba(214,40,34,0.15)' : 'rgba(214,40,34,0.08)',
             border: `1px solid ${path === '/ao-vivo' ? 'var(--red)' : 'rgba(214,40,34,0.25)'}`,
             color: 'var(--red)', fontSize: 11, fontWeight: 600, letterSpacing: 1,
-            padding: '8px 18px', borderRadius: 0, cursor: 'pointer',
+            padding: '8px 18px', borderRadius: 'var(--radius)', cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
           }}
         >
@@ -61,7 +61,7 @@ export default function TopBar() {
           onClick={() => navigate('/configuracoes')}
           style={{
             background: 'none', border: '1px solid var(--border)', color: 'var(--text3)',
-            fontSize: 10, padding: '4px 10px', borderRadius: 0, cursor: 'pointer',
+            fontSize: 10, padding: '4px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
           }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--green)'; }}
@@ -73,7 +73,7 @@ export default function TopBar() {
           onClick={doLogout}
           style={{
             background: 'none', border: '1px solid var(--border)', color: 'var(--text3)',
-            fontSize: 10, padding: '4px 10px', borderRadius: 0, cursor: 'pointer',
+            fontSize: 10, padding: '4px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
           }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.borderColor = 'rgba(214,40,34,0.25)'; }}
@@ -96,7 +96,7 @@ function NavBtn({ active, onClick, children }: { active: boolean; onClick: () =>
         border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
         color: active ? 'var(--green)' : 'var(--text2)',
         fontSize: 11, fontWeight: 600, letterSpacing: 1, padding: '8px 18px',
-        borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)',
+        borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)',
         transition: 'all .2s'
       }}
     >

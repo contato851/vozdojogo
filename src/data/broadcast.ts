@@ -1,19 +1,43 @@
 import { supabase } from '@/integrations/supabase/client';
 import { LiveState } from './types';
 
-let currentBroadcastId: string | null = null;
-let currentShareCode: string | null = null;
+const STORAGE_KEY = 'vdj-broadcast';
+
+function readStoredBroadcast(): { id: string; code: string } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+const stored = readStoredBroadcast();
+let currentBroadcastId: string | null = stored?.id ?? null;
+let currentShareCode: string | null = stored?.code ?? null;
+
+function persistBroadcast(id: string | null, code: string | null) {
+  if (id && code) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, code }));
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
 
 export async function createBroadcast(matchData: any): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Faça login para compartilhar a transmissão.');
+
   const { data, error } = await supabase
     .from('live_broadcasts')
-    .insert({ match_data: matchData, state: {}, is_active: true })
+    .insert({ match_data: matchData, state: {}, is_active: true, user_id: user.id })
     .select('id, share_code')
     .single();
 
   if (error) throw error;
   currentBroadcastId = data.id;
   currentShareCode = data.share_code;
+  persistBroadcast(data.id, data.share_code);
   return data.share_code;
 }
 
@@ -35,6 +59,7 @@ export async function stopBroadcast() {
     .eq('id', currentBroadcastId);
   currentBroadcastId = null;
   currentShareCode = null;
+  persistBroadcast(null, null);
 }
 
 export function getCurrentShareCode() {
@@ -48,6 +73,7 @@ export function getCurrentBroadcastId() {
 export function setCurrentBroadcast(id: string, code: string) {
   currentBroadcastId = id;
   currentShareCode = code;
+  persistBroadcast(id, code);
 }
 
 export async function fetchBroadcast(shareCode: string) {

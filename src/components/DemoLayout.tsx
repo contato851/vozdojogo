@@ -26,7 +26,7 @@ function DemoTopBar() {
         <Logo size="md" />
         <span style={{
           fontSize: 9, fontWeight: 700, letterSpacing: 1.5, padding: '3px 8px',
-          background: 'var(--green-dim)', color: 'var(--green)', borderRadius: 0,
+          background: 'var(--green-dim)', color: 'var(--green)', borderRadius: 'var(--radius)',
           border: '1px solid var(--green)'
         }}>
           DEMO
@@ -42,7 +42,7 @@ function DemoTopBar() {
             background: path === '/demo/ao-vivo' ? 'rgba(214,40,34,0.15)' : 'rgba(214,40,34,0.08)',
             border: `1px solid ${path === '/demo/ao-vivo' ? 'var(--red)' : 'rgba(214,40,34,0.25)'}`,
             color: 'var(--red)', fontSize: 11, fontWeight: 600, letterSpacing: 1,
-            padding: '8px 18px', borderRadius: 0, cursor: 'pointer',
+            padding: '8px 18px', borderRadius: 'var(--radius)', cursor: 'pointer',
             fontFamily: 'var(--font-body)', transition: 'all .2s'
           }}
         >
@@ -74,7 +74,7 @@ function NavBtn({ active, onClick, children }: { active: boolean; onClick: () =>
         border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
         color: active ? 'var(--green)' : 'var(--text2)',
         fontSize: 11, fontWeight: 600, letterSpacing: 1, padding: '8px 18px',
-        borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)',
+        borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)',
         transition: 'all .2s'
       }}
     >
@@ -94,7 +94,7 @@ function DemoShell({ children }: { children: React.ReactNode }) {
 
 export default function DemoLayout() {
   return (
-    <AppProvider>
+    <AppProvider basePath="/demo">
       <Routes>
         <Route path="/" element={<Navigate to="/demo/escalacao" replace />} />
         <Route path="/escalacao" element={<DemoShell><SetupScreen /></DemoShell>} />

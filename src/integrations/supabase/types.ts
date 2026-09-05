@@ -10,42 +10,50 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      ai_generation_log: {
+        Row: {
+          created_at: string
+          estimated_cost_usd: number | null
+          id: string
+          input_tokens: number | null
+          output_tokens: number | null
+          success: boolean
+          user_id: string
+          web_searches: number | null
+        }
+        Insert: {
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          success?: boolean
+          user_id: string
+          web_searches?: number | null
+        }
+        Update: {
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          success?: boolean
+          user_id?: string
+          web_searches?: number | null
+        }
+        Relationships: []
+      }
       billing_customers: {
         Row: {
           auth_user_id: string | null
           created_at: string
           email: string
           id: string
-          stripe_customer_id: string
+          mp_payer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -53,7 +61,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          stripe_customer_id: string
+          mp_payer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -61,38 +69,8 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
-          stripe_customer_id?: string
+          mp_payer_id?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      checkout_sessions: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          email: string
-          id: string
-          status: string
-          stripe_checkout_session_id: string
-          stripe_customer_id: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          email: string
-          id?: string
-          status?: string
-          stripe_checkout_session_id: string
-          stripe_customer_id?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          email?: string
-          id?: string
-          status?: string
-          stripe_checkout_session_id?: string
-          stripe_customer_id?: string | null
         }
         Relationships: []
       }
@@ -144,6 +122,7 @@ export type Database = {
           share_code: string
           state: Json
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -153,6 +132,7 @@ export type Database = {
           share_code?: string
           state?: Json
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -162,6 +142,7 @@ export type Database = {
           share_code?: string
           state?: Json
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -206,6 +187,7 @@ export type Database = {
           player_data: Json | null
           player_id: string | null
           reason: string
+          status: string
         }
         Insert: {
           action: string
@@ -217,6 +199,7 @@ export type Database = {
           player_data?: Json | null
           player_id?: string | null
           reason?: string
+          status?: string
         }
         Update: {
           action?: string
@@ -228,6 +211,7 @@ export type Database = {
           player_data?: Json | null
           player_id?: string | null
           reason?: string
+          status?: string
         }
         Relationships: [
           {
@@ -246,10 +230,10 @@ export type Database = {
           canceled_at: string | null
           created_at: string
           current_period_end: string | null
+          grace_deadline: string | null
           id: string
+          mp_preapproval_id: string
           status: string
-          stripe_price_id: string | null
-          stripe_subscription_id: string
           updated_at: string
         }
         Insert: {
@@ -258,10 +242,10 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          grace_deadline?: string | null
           id?: string
+          mp_preapproval_id: string
           status?: string
-          stripe_price_id?: string | null
-          stripe_subscription_id: string
           updated_at?: string
         }
         Update: {
@@ -270,10 +254,10 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          grace_deadline?: string | null
           id?: string
+          mp_preapproval_id?: string
           status?: string
-          stripe_price_id?: string | null
-          stripe_subscription_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -365,8 +349,6 @@ export type Database = {
           main_difficulty: string | null
           narration_type: string[] | null
           onboarding_completed: boolean | null
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           user_id: string
         }
         Insert: {
@@ -378,8 +360,6 @@ export type Database = {
           main_difficulty?: string | null
           narration_type?: string[] | null
           onboarding_completed?: boolean | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           user_id: string
         }
         Update: {
@@ -391,8 +371,6 @@ export type Database = {
           main_difficulty?: string | null
           narration_type?: string[] | null
           onboarding_completed?: boolean | null
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -421,12 +399,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -450,11 +428,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -475,11 +453,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -500,11 +478,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -517,23 +495,20 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    ? DefaultSchema["CompositeTypes"][CompositeTypeName]
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

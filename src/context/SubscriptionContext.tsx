@@ -11,7 +11,7 @@ interface SubscriptionState {
   subscriptionStatus: string | null;
   checkSubscription: () => Promise<void>;
   startCheckout: () => Promise<void>;
-  openPortal: () => Promise<void>;
+  cancelSubscription: () => Promise<{ error: string | null }>;
 }
 
 const SubscriptionContext = createContext<SubscriptionState | null>(null);
@@ -76,20 +76,30 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const openPortal = useCallback(async () => {
+  const cancelSubscription = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) window.open(data.url, '_blank');
-    } catch (err) {
-      console.error('Portal error:', err);
+      const { data, error } = await supabase.functions.invoke('cancel-subscription');
+      if (error) {
+        let serverMessage: string | null = null;
+        try {
+          const body = await (error as any).context?.json?.();
+          serverMessage = body?.error ?? null;
+        } catch { /* body wasn't JSON or already consumed */ }
+        throw new Error(serverMessage || error.message);
+      }
+      if (data?.error) throw new Error(data.error);
+      await checkSubscription();
+      return { error: null };
+    } catch (err: any) {
+      console.error('Cancel subscription error:', err);
+      return { error: err?.message || 'Não foi possível cancelar a assinatura.' };
     }
-  }, []);
+  }, [checkSubscription]);
 
   return (
     <SubscriptionContext.Provider value={{
       subscribed, loading, gracePeriod, graceDaysRemaining,
-      subscriptionEnd, subscriptionStatus, checkSubscription, startCheckout, openPortal
+      subscriptionEnd, subscriptionStatus, checkSubscription, startCheckout, cancelSubscription
     }}>
       {children}
     </SubscriptionContext.Provider>

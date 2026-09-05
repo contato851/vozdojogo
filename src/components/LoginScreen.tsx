@@ -1,20 +1,36 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginScreen() {
-  const { user, loading: authLoading, signIn } = useAuth();
-  const navigate = useNavigate();
+export default function LoginScreen({ embedded = false }: { embedded?: boolean }) {
+  const { user, loading: authLoading, signIn, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
+  const [mode, setMode] = useState<'login' | 'reset'>('login');
 
   if (authLoading) return null;
   if (user) return <Navigate to="/escalacao" replace />;
+
+  const doReset = async () => {
+    if (!email) {
+      setMsg({ text: 'Informe seu e-mail.', type: 'error' });
+      return;
+    }
+    setSubmitting(true);
+    setMsg(null);
+    const { error } = await resetPassword(email);
+    if (error) {
+      setMsg({ text: error, type: 'error' });
+    } else {
+      setMsg({ text: 'Enviamos um link de redefinição para seu e-mail.', type: 'success' });
+    }
+    setSubmitting(false);
+  };
 
   const doAction = async () => {
     if (!email || !password) {
@@ -43,7 +59,7 @@ export default function LoginScreen() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') doAction();
+    if (e.key === 'Enter') (mode === 'login' ? doAction() : doReset());
   };
 
   return (
@@ -52,15 +68,27 @@ export default function LoginScreen() {
       minHeight: '100vh', padding: 20
     }}>
       <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-        <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
-          <Logo size="lg" />
-        </div>
-        <div style={{
-          color: 'var(--text2)', fontSize: 13, marginBottom: 32,
-          letterSpacing: 1
-        }}>
-          FERRAMENTA PROFISSIONAL PARA NARRADORES
-        </div>
+        {!embedded && (
+          <>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+              <Logo size="lg" />
+            </div>
+            <div style={{
+              color: 'var(--text2)', fontSize: 13, marginBottom: 32,
+              letterSpacing: 1
+            }}>
+              FERRAMENTA PROFISSIONAL PARA NARRADORES
+            </div>
+          </>
+        )}
+        {embedded && (
+          <div style={{
+            fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700,
+            color: 'var(--text)', letterSpacing: 1, marginBottom: 24
+          }}>
+            ENTRAR NA SUA CONTA
+          </div>
+        )}
 
         <input
           type="email"
@@ -71,37 +99,51 @@ export default function LoginScreen() {
           className={shake ? 'shake-anim' : ''}
           style={{
             width: '100%', background: 'var(--bg2)', border: '2px solid var(--border2)',
-            borderRadius: 0, padding: '14px 18px', color: 'var(--text)',
+            borderRadius: 'var(--radius)', padding: '14px 18px', color: 'var(--text)',
             fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
             marginBottom: 10, transition: 'border-color .3s'
           }}
         />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className={shake ? 'shake-anim' : ''}
-          style={{
-            width: '100%', background: 'var(--bg2)', border: '2px solid var(--border2)',
-            borderRadius: 0, padding: '14px 18px', color: 'var(--text)',
-            fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
-            marginBottom: 10, transition: 'border-color .3s'
-          }}
-        />
+        {mode === 'login' && (
+          <input
+            type="password"
+            placeholder="Senha"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className={shake ? 'shake-anim' : ''}
+            style={{
+              width: '100%', background: 'var(--bg2)', border: '2px solid var(--border2)',
+              borderRadius: 'var(--radius)', padding: '14px 18px', color: 'var(--text)',
+              fontSize: 15, fontFamily: 'var(--font-body)', outline: 'none',
+              marginBottom: 10, transition: 'border-color .3s'
+            }}
+          />
+        )}
         <button
-          onClick={doAction}
+          onClick={mode === 'login' ? doAction : doReset}
           disabled={submitting}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
-            color: '#fff', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
-            border: 'none', borderRadius: 0, cursor: submitting ? 'not-allowed' : 'pointer',
+            color: 'var(--green-text)', fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-body)',
+            border: 'none', borderRadius: 'var(--radius)', cursor: submitting ? 'not-allowed' : 'pointer',
             transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
-          {submitting ? 'ENTRANDO...' : 'ENTRAR'}
+          {mode === 'login'
+            ? (submitting ? 'ENTRANDO...' : 'ENTRAR')
+            : (submitting ? 'ENVIANDO...' : 'ENVIAR LINK DE REDEFINIÇÃO')}
         </button>
+
+        <div
+          onClick={() => { setMode(mode === 'login' ? 'reset' : 'login'); setMsg(null); }}
+          style={{
+            marginTop: 14, fontSize: 12, color: 'var(--text2)', cursor: 'pointer',
+            textDecoration: 'underline', textUnderlineOffset: 3
+          }}
+        >
+          {mode === 'login' ? 'Esqueci minha senha' : 'Voltar para o login'}
+        </div>
 
         {msg && (
           <div style={{
@@ -113,30 +155,6 @@ export default function LoginScreen() {
             {msg.text}
           </div>
         )}
-
-        {/* CTA for non-subscribers */}
-        <div style={{
-          marginTop: 32, padding: '20px 16px', background: 'var(--bg2)',
-          border: '1px solid var(--border)', borderRadius: 0
-        }}>
-          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
-            Ainda não tem acesso?
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              width: '100%', padding: 12, background: 'none',
-              border: '2px solid var(--green)', color: 'var(--green)',
-              fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-head)',
-              borderRadius: 0, cursor: 'pointer', letterSpacing: 1,
-              transition: 'all .2s'
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--green)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--green)'; }}
-          >
-            ASSINAR POR R$14,90/MÊS
-          </button>
-        </div>
       </div>
     </div>
   );

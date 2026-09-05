@@ -27,9 +27,42 @@ interface AppContextType {
   exportMatch: () => void;
   importMatch: (file: File) => void;
   savedIndicator: boolean;
+  isDemo: boolean;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
+
+// Patches name/number/coach corrections from `match` into an already-running
+// `liveState` by player id, without touching goals/cards/subs/clock — so a
+// typo fix in Escalação doesn't force a destructive "Reiniciar".
+function patchPlayer<P extends Player>(p: P, byId: Map<string, Player>): P {
+  const m = byId.get(p.id);
+  if (!m || (m.name === p.name && m.number === p.number)) return p;
+  return { ...p, name: m.name, number: m.number };
+}
+
+function patchList<P extends Player>(list: P[], byId: Map<string, Player>): P[] {
+  let changed = false;
+  const next = list.map(p => {
+    const q = patchPlayer(p, byId);
+    if (q !== p) changed = true;
+    return q;
+  });
+  return changed ? next : list;
+}
+
+function syncLiveTeamFromMatch(matchTeam: Team, liveTeam: LiveTeam): LiveTeam {
+  const pool = [...matchTeam.starters, ...matchTeam.reserves, ...(matchTeam.unlisted || [])];
+  const byId = new Map(pool.map(p => [p.id, p]));
+  const starters = patchList(liveTeam.starters, byId);
+  const reserves = patchList(liveTeam.reserves, byId);
+  const subsOut = patchList(liveTeam.subsOut, byId);
+  const coachChanged = matchTeam.coach !== liveTeam.coach;
+  if (starters === liveTeam.starters && reserves === liveTeam.reserves && subsOut === liveTeam.subsOut && !coachChanged) {
+    return liveTeam;
+  }
+  return { ...liveTeam, coach: matchTeam.coach, starters, reserves, subsOut };
+}
 
 export function useApp() {
   const ctx = useContext(AppContext);
@@ -37,7 +70,7 @@ export function useApp() {
   return ctx;
 }
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children, basePath = '' }: { children: React.ReactNode; basePath?: string }) {
   const navigate = useNavigate();
 
   const [match, setMatch] = useState<Match>(() => {
@@ -87,6 +120,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [liveState, match.id, showSubs, showCur, curTab, liveView]);
 
+  // Non-destructive sync: a name/number/coach correction made in Escalação
+  // after transmission has started propagates into the live squad by player
+  // id, leaving goals/cards/subs/clock untouched (unlike resetLive).
+  useEffect(() => {
+    setLiveState(prev => {
+      if (!prev) return prev;
+      const teamA = syncLiveTeamFromMatch(match.teamA, prev.teamA);
+      const teamB = syncLiveTeamFromMatch(match.teamB, prev.teamB);
+      if (teamA === prev.teamA && teamB === prev.teamB) return prev;
+      return { ...prev, teamA, teamB };
+    });
+  }, [match]);
+
   const startLive = useCallback(() => {
     const doSort = match.sortOrder !== 'manual';
     const prep = (arr: Player[]) => {
@@ -105,8 +151,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLiveState(newLive);
     setShowSubs(false);
     setShowCur(false);
-    navigate('/ao-vivo');
-  }, [match, navigate]);
+    navigate(`${basePath}/ao-vivo`);
+  }, [match, navigate, basePath]);
 
   const resetLive = useCallback(() => {
     if (!window.confirm('Reiniciar a transmissão? Substituições e eventos serão perdidos.')) return;
@@ -122,8 +168,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const m = newMatchData();
     setMatch(m);
     saveMatchesToLS([m]);
-    navigate('/escalacao');
-  }, [navigate]);
+    navigate(`${basePath}/escalacao`);
+  }, [navigate, basePath]);
 
   const exportMatchFn = useCallback(() => {
     const name = `${match.teamA.name || 'TimeA'} x ${match.teamB.name || 'TimeB'}.json`;
@@ -147,7 +193,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           clearLiveLS();
           setMatch(parsed);
           saveMatchesToLS([parsed]);
-          navigate('/escalacao');
+          navigate(`${basePath}/escalacao`);
         } else {
           alert('Arquivo inválido.');
         }
@@ -156,7 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     };
     reader.readAsText(file);
-  }, [navigate]);
+  }, [navigate, basePath]);
 
   // beforeunload warning
   useEffect(() => {
@@ -176,7 +222,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab,
       liveView, setLiveView, saveMatch, saveLiveState,
       startLive, resetLive, newMatch: newMatchFn, exportMatch: exportMatchFn,
-      importMatch: importMatchFn, savedIndicator
+      importMatch: importMatchFn, savedIndicator, isDemo: basePath === '/demo'
     }}>
       {children}
     </AppContext.Provider>

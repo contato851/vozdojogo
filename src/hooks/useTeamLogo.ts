@@ -1,37 +1,6 @@
 import { useState, useEffect } from 'react';
 
 const CACHE_KEY = 'vdj-team-logos';
-const FLAG_CDN = 'https://flagcdn.com/w80';
-
-// Map national team names to ISO country codes for flags
-const COUNTRY_FLAGS: Record<string, string> = {
-  'BRASIL': 'br',
-  'ARGENTINA': 'ar',
-  'URUGUAI': 'uy',
-  'COLÔMBIA': 'co',
-  'CHILE': 'cl',
-  'PARAGUAI': 'py',
-  'PERU': 'pe',
-  'EQUADOR': 'ec',
-  'VENEZUELA': 've',
-  'BOLÍVIA': 'bo',
-  'ALEMANHA': 'de',
-  'ESPANHA': 'es',
-  'FRANÇA': 'fr',
-  'INGLATERRA': 'gb-eng',
-  'ITÁLIA': 'it',
-  'PORTUGAL': 'pt',
-  'HOLANDA': 'nl',
-  'BÉLGICA': 'be',
-  'CROÁCIA': 'hr',
-  'MÉXICO': 'mx',
-  'JAPÃO': 'jp',
-  'COREIA DO SUL': 'kr',
-  'MARROCOS': 'ma',
-  'NIGÉRIA': 'ng',
-  'CAMARÕES': 'cm',
-  'ESTADOS UNIDOS': 'us',
-};
 
 // Wikipedia search terms for clubs that need special mapping
 const WIKI_OVERRIDES: Record<string, string> = {
@@ -134,29 +103,18 @@ async function fetchWikiLogo(teamName: string): Promise<string | null> {
   }
 }
 
-export function getTeamLogoUrl(teamName: string, isNationalTeam: boolean): string | null {
-  if (isNationalTeam) {
-    const code = COUNTRY_FLAGS[teamName];
-    return code ? `${FLAG_CDN}/${code}.png` : null;
-  }
-  
+export function getTeamLogoUrl(teamName: string): string | null {
   const cache = getLogoCache();
   return cache[teamName] !== undefined ? cache[teamName] : null;
 }
 
-export function useTeamLogo(teamName: string, isNationalTeam: boolean) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(() => 
-    getTeamLogoUrl(teamName, isNationalTeam)
+export function useTeamLogo(teamName: string) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(() =>
+    getTeamLogoUrl(teamName)
   );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isNationalTeam) {
-      const code = COUNTRY_FLAGS[teamName];
-      setLogoUrl(code ? `${FLAG_CDN}/${code}.png` : null);
-      return;
-    }
-
     const cache = getLogoCache();
     if (cache[teamName] !== undefined) {
       setLogoUrl(cache[teamName]);
@@ -179,15 +137,13 @@ export function useTeamLogo(teamName: string, isNationalTeam: boolean) {
       setLogoUrl(url);
       setLoading(false);
     });
-  }, [teamName, isNationalTeam]);
+  }, [teamName]);
 
   return { logoUrl, loading };
 }
 
 // Batch prefetch logos for visible teams
-export function prefetchLogos(teamNames: string[], isNationalTeam: boolean) {
-  if (isNationalTeam) return;
-  
+export function prefetchLogos(teamNames: string[]) {
   const cache = getLogoCache();
   const toFetch = teamNames.filter(n => cache[n] === undefined);
   

@@ -65,7 +65,7 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
   };
 
   const inputStyle: React.CSSProperties = {
-    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
+    background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
     padding: '8px 12px', color: 'var(--text)', fontSize: 13,
     fontFamily: 'var(--font-body)', outline: 'none', width: '100%',
   };
@@ -117,10 +117,10 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {logoUrl && (
             <img src={logoUrl} alt="Logo" onError={e => (e.currentTarget.style.display = 'none')}
-              style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 0, border: '1px solid var(--border)' }} />
+              style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }} />
           )}
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading} style={{
-            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
+            background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
             color: 'var(--text2)', fontSize: 12, fontWeight: 600, padding: '8px 16px',
             cursor: uploading ? 'wait' : 'pointer', fontFamily: 'var(--font-body)'
           }}>
@@ -140,7 +140,7 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <label style={{ ...labelStyle, marginBottom: 0 }}>Elenco</label>
           <button onClick={addPlayer} style={{
-            background: 'var(--green-dim)', border: '1px solid var(--green)', borderRadius: 0,
+            background: 'var(--green-dim)', border: '1px solid var(--green)', borderRadius: 'var(--radius)',
             color: 'var(--green)', fontSize: 11, fontWeight: 600, padding: '4px 12px',
             cursor: 'pointer', fontFamily: 'var(--font-body)'
           }}>+ Jogador</button>
@@ -166,14 +166,14 @@ export default function CustomTeamEditor({ team, onSave, onCancel }: Props) {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button onClick={onCancel} style={{
-          flex: 1, padding: '10px', borderRadius: 0, border: '1px solid var(--border)',
+          flex: 1, padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
           background: 'var(--bg3)', color: 'var(--text2)', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'var(--font-body)'
         }}>Cancelar</button>
         <button onClick={handleSave} disabled={saving || !name.trim()} style={{
-          flex: 1, padding: '10px', borderRadius: 0, border: 'none',
+          flex: 1, padding: '10px', borderRadius: 'var(--radius)', border: 'none',
           background: saving || !name.trim() ? 'var(--bg3)' : 'var(--green)',
-          color: saving || !name.trim() ? 'var(--text3)' : '#000', fontSize: 13, fontWeight: 700,
+          color: saving || !name.trim() ? 'var(--text3)' : 'var(--green-text)', fontSize: 13, fontWeight: 700,
           cursor: saving || !name.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)',
           letterSpacing: 0.5
         }}>

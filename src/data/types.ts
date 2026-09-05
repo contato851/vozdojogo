@@ -23,13 +23,21 @@ export interface Team {
 export interface Match {
   id: string;
   createdAt: string;
+  competition: string;
+  round: string;
+  matchDate: string;
+  matchTime: string;
   stadium: string;
   referee: string;
   assistant1: string;
   assistant2: string;
   var_ref: string;
+  fourthReferee: string;
   reporter: string;
-  commentators: string;
+  commentator1: string;
+  commentator2: string;
+  generalNotes: string;
+  aiNotesGenerated: boolean;
   sortOrder: 'number' | 'manual';
   teamA: Team;
   teamB: Team;

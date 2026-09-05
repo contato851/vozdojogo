@@ -10,7 +10,7 @@ export default function GraceBanner() {
     <div style={{
       background: graceDaysRemaining <= 3 ? 'rgba(214,40,34,0.08)' : 'rgba(156,100,0,0.08)',
       border: `1px solid ${graceDaysRemaining <= 3 ? 'rgba(214,40,34,0.3)' : 'rgba(156,100,0,0.25)'}`,
-      borderRadius: 0,
+      borderRadius: 'var(--radius)',
       padding: '10px 16px',
       marginBottom: 12,
       display: 'flex',
@@ -36,8 +36,8 @@ export default function GraceBanner() {
       <button
         onClick={startCheckout}
         style={{
-          background: 'var(--green)', color: '#fff', border: 'none',
-          padding: '6px 16px', borderRadius: 0, fontSize: 11, fontWeight: 700,
+          background: 'var(--green)', color: 'var(--green-text)', border: 'none',
+          padding: '6px 16px', borderRadius: 'var(--radius)', fontSize: 11, fontWeight: 700,
           fontFamily: 'var(--font-body)', cursor: 'pointer', letterSpacing: 0.5,
           whiteSpace: 'nowrap', flexShrink: 0
         }}

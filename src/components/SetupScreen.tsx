@@ -13,7 +13,7 @@ import { useCustomTeams, CustomTeam } from '../hooks/useCustomTeams';
 import { useSavedLineups } from '../hooks/useSavedLineups';
 
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName, false);
+  const { logoUrl } = useTeamLogo(teamName);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (
@@ -144,13 +144,6 @@ export default function SetupScreen() {
       return { ...m, [tk]: team };
     });
   };
-  const removeReserve = (tk: 'teamA' | 'teamB', idx: number) => {
-    setMatch(m => {
-      const team = { ...m[tk] };
-      team.reserves = team.reserves.filter((_, i) => i !== idx);
-      return { ...m, [tk]: team };
-    });
-  };
   const addUnlisted = (tk: 'teamA' | 'teamB') => {
     setMatch(m => {
       const team = { ...m[tk] };
@@ -174,6 +167,7 @@ export default function SetupScreen() {
       const { starters, reserves } = buildLineupFromPlayers(tk, team.customPlayers);
       setMatch(m => ({
         ...m,
+        aiNotesGenerated: false,
         [tk]: {
           ...m[tk],
           name: team.name,
@@ -194,6 +188,7 @@ export default function SetupScreen() {
 
     setMatch(m => ({
       ...m,
+      aiNotesGenerated: false,
       [tk]: {
         ...m[tk],
         name: team.name,
@@ -252,62 +247,13 @@ export default function SetupScreen() {
   const teamsSelected = teamASelected && teamBSelected;
   const noTeamSelected = !teamASelected && !teamBSelected;
 
-  const [showTutorial, setShowTutorial] = useState(() => {
-    try { return !localStorage.getItem('vdj-tutorial-dismissed'); } catch { return true; }
-  });
-  const dismissTutorial = () => {
-    setShowTutorial(false);
-    try { localStorage.setItem('vdj-tutorial-dismissed', '1'); } catch { /* ignore */ }
-  };
-
   return (
     <div style={{ animation: 'fadeUp .3s ease-out' }}>
-
-      {/* === TUTORIAL VIDEO BANNER === */}
-      {showTutorial && (
-        <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
-          padding: '0', marginBottom: 14, overflow: 'hidden', position: 'relative'
-        }}>
-          <button
-            onClick={dismissTutorial}
-            style={{
-              position: 'absolute', top: 8, right: 8, zIndex: 2,
-              background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)',
-              width: 28, height: 28, borderRadius: '50%', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}
-            title="Fechar"
-          ><X size={14} /></button>
-          {/* Replace the placeholder below with your YouTube/Vimeo embed */}
-          {/* Example: <iframe src="https://www.youtube.com/embed/VIDEO_ID" style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="autoplay; fullscreen" /> */}
-          <div style={{
-            width: '100%', aspectRatio: '16/9', maxHeight: 280,
-            background: 'linear-gradient(135deg, var(--bg3), var(--bg2))',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10
-          }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%', background: 'var(--green)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(0,122,67,0.3)', cursor: 'pointer'
-            }}>
-              <Play size={22} fill="#fff" color="#fff" style={{ marginLeft: 2 }} />
-            </div>
-            <span style={{
-              fontFamily: 'var(--font-head)', fontSize: 12, color: 'var(--text2)',
-              letterSpacing: 2, textTransform: 'uppercase'
-            }}>
-              APRENDA A USAR O VOZ DO JOGO
-            </span>
-          </div>
-        </div>
-      )}
-
 
       {/* === EMPTY STATE === */}
       {noTeamSelected && (
         <div style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+          background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
           padding: '48px 24px', marginBottom: 14, textAlign: 'center',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16
         }}>
@@ -335,7 +281,7 @@ export default function SetupScreen() {
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '12px 28px', fontSize: 14, letterSpacing: 1.5,
                 background: 'var(--bg3)', border: '1px solid var(--border2)',
-                color: 'var(--text)', borderRadius: 0, cursor: 'pointer',
+                color: 'var(--text)', borderRadius: 'var(--radius)', cursor: 'pointer',
                 fontFamily: 'var(--font-head)', fontWeight: 600,
                 transition: 'all .2s'
               }}
@@ -353,7 +299,7 @@ export default function SetupScreen() {
 
       {!noTeamSelected && <>{/* === HEADER: VS display like live screen === */}
       <div style={{
-        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '20px', marginBottom: 14
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
@@ -433,7 +379,7 @@ export default function SetupScreen() {
       {lineupError && (
         <div style={{
           background: 'rgba(214,40,34,0.08)', border: '1px solid rgba(214,40,34,0.25)',
-          borderRadius: 0, padding: '8px 14px', marginBottom: 14,
+          borderRadius: 'var(--radius)', padding: '8px 14px', marginBottom: 14,
           fontSize: 12, color: 'var(--red)', textAlign: 'center'
         }}>
           {lineupError}
@@ -445,7 +391,7 @@ export default function SetupScreen() {
 
       {/* === SORT ORDER === */}
       <div style={{
-        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+        background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '10px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <span style={{ fontSize: 11, color: 'var(--text2)' }}>Ordenação da escalação:</span>
@@ -467,24 +413,32 @@ export default function SetupScreen() {
           return (
             <div key={tk} style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+                background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
                 overflow: 'hidden'
               }}>
                 {/* Header - like live screen */}
                 <div
                   onClick={() => setPickerTeam(tk)}
-                  style={{
-                    padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    background: hasTeam ? team.color : 'var(--bg3)', cursor: 'pointer', transition: 'opacity .2s'
-                  }}
+                  style={{ cursor: 'pointer', transition: 'opacity .2s' }}
                 >
-                  {hasTeam && <LiveTeamLogo teamName={team.name} size={28} />}
-                  <span style={{
-                    fontFamily: 'var(--font-head)', fontSize: hasTeam ? 22 : 16, fontWeight: 700,
-                    letterSpacing: 3, color: hasTeam ? team.accent : 'var(--text3)'
+                  {hasTeam && (
+                    <div style={{ display: 'flex', height: 5 }}>
+                      <div style={{ flex: 1, background: team.color }} />
+                      <div style={{ flex: 1, background: team.accent }} />
+                    </div>
+                  )}
+                  <div style={{
+                    padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    background: hasTeam ? '#fff' : 'var(--bg3)'
                   }}>
-                    {hasTeam ? team.name : `TIME ${tk === 'teamA' ? 'A' : 'B'}`}
-                  </span>
+                    {hasTeam && <LiveTeamLogo teamName={team.name} size={28} />}
+                    <span style={{
+                      fontFamily: 'var(--font-head)', fontSize: hasTeam ? 22 : 16, fontWeight: 700,
+                      letterSpacing: 3, color: hasTeam ? '#030016' : 'var(--text3)'
+                    }}>
+                      {hasTeam ? team.name : `TIME ${tk === 'teamA' ? 'A' : 'B'}`}
+                    </span>
+                  </div>
                 </div>
 
                 <div style={{ padding: 16 }}>
@@ -498,7 +452,7 @@ export default function SetupScreen() {
                       <Label>Formação</Label>
                       <select value={team.formation} onChange={e => updateTeam(tk, 'formation', e.target.value)}
                         style={{
-                          background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
+                          background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
                           padding: '8px 10px', color: 'var(--text)', fontSize: 12,
                           fontFamily: 'var(--font-body)', outline: 'none', cursor: 'pointer', width: '100%'
                         }}>
@@ -509,40 +463,24 @@ export default function SetupScreen() {
                     </div>
                   </div>
 
-                  {/* Colors row */}
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>COR</span>
-                        <input type="color" value={team.color} onChange={e => updateTeam(tk, 'color', e.target.value)}
-                          style={{ width: 28, height: 28, border: 'none', borderRadius: 0, cursor: 'pointer', background: 'transparent' }} />
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>DESTAQUE</span>
-                        <input type="color" value={team.accent} onChange={e => updateTeam(tk, 'accent', e.target.value)}
-                          style={{ width: 28, height: 28, border: 'none', borderRadius: 0, cursor: 'pointer', background: 'transparent' }} />
-                      </label>
+                  {hasTeam && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                      <button
+                        onClick={() => handleSaveLineup(tk)}
+                        className="btn-ghost"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          fontSize: 10,
+                          padding: '5px 10px',
+                          opacity: savingLineup === tk ? 0.7 : 1,
+                          cursor: savingLineup === tk ? 'wait' : 'pointer'
+                        }}
+                        disabled={savingLineup === tk}
+                      >
+                        <Save size={11} /> {savingLineup === tk ? 'Salvando...' : 'Salvar elenco'}
+                      </button>
                     </div>
-
-                    {hasTeam && (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => handleSaveLineup(tk)}
-                          className="btn-ghost"
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            fontSize: 10,
-                            padding: '5px 10px',
-                            opacity: savingLineup === tk ? 0.7 : 1,
-                            cursor: savingLineup === tk ? 'wait' : 'pointer'
-                          }}
-                          disabled={savingLineup === tk}
-                        >
-                          <Save size={11} /> {savingLineup === tk ? 'Salvando...' : 'Salvar elenco'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Titulares - live style with number badges */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -560,7 +498,7 @@ export default function SetupScreen() {
                       onDragLeave={handleDragLeave}
                       style={{
                         display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
-                        padding: '3px 4px', borderRadius: 0, transition: 'all .15s',
+                        padding: '3px 4px', borderRadius: 'var(--radius)', transition: 'all .15s',
                         border: isDropTarget(tk, 'starters', i) ? '2px solid var(--green)' : '2px solid transparent',
                         background: isDropTarget(tk, 'starters', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                       }}
@@ -572,9 +510,8 @@ export default function SetupScreen() {
                         style={{
                           width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
                           fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14,
-                          background: hasTeam ? team.color : 'var(--bg3)',
-                          color: hasTeam ? team.accent : 'var(--text)',
-                          borderRadius: 0, border: 'none'
+                          background: 'var(--bg3)', color: 'var(--text)',
+                          borderRadius: 'var(--radius)', border: 'none'
                         }}
                       />
                       <Input
@@ -592,7 +529,7 @@ export default function SetupScreen() {
                     <Label>Reservas ({team.reserves.length})</Label>
                     <button onClick={() => addReserve(tk)} style={{
                       background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
-                      fontSize: 10, padding: '2px 8px', borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)'
+                      fontSize: 10, padding: '2px 8px', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)'
                     }}>+ Reserva</button>
                   </div>
                   <div style={{ maxHeight: 220, overflowY: 'auto' }}>
@@ -607,7 +544,7 @@ export default function SetupScreen() {
                         onDragLeave={handleDragLeave}
                         style={{
                           display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
-                          padding: '3px 4px', borderRadius: 0,
+                          padding: '3px 4px', borderRadius: 'var(--radius)',
                           border: isDropTarget(tk, 'reserves', i) ? '2px solid var(--green)' : '2px solid transparent',
                           background: isDropTarget(tk, 'reserves', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                         }}
@@ -619,7 +556,7 @@ export default function SetupScreen() {
                           style={{
                             width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
                             fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 13,
-                            background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 0, border: 'none'
+                            background: 'var(--bg3)', color: 'var(--text)', borderRadius: 'var(--radius)', border: 'none'
                           }}
                         />
                         <Input
@@ -629,11 +566,6 @@ export default function SetupScreen() {
                           placeholder={`Reserva ${i + 1}`}
                           style={{ flex: 1, padding: '6px 10px', fontSize: 11 }}
                         />
-                        <button onClick={() => removeReserve(tk, i)} style={{
-                          background: 'rgba(214,40,34,0.08)', border: 'none', color: 'var(--red)',
-                          width: 24, height: 28, borderRadius: 0, cursor: 'pointer', flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}><X size={13} /></button>
                       </div>
                     ))}
                   </div>
@@ -643,7 +575,7 @@ export default function SetupScreen() {
                     <Label>Não Relacionados ({(team.unlisted || []).length})</Label>
                     <button onClick={() => addUnlisted(tk)} style={{
                       background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)',
-                      fontSize: 10, padding: '2px 8px', borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)'
+                      fontSize: 10, padding: '2px 8px', borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)'
                     }}>+ Não Relacionado</button>
                   </div>
                   <div style={{ maxHeight: 180, overflowY: 'auto' }}>
@@ -658,7 +590,7 @@ export default function SetupScreen() {
                         onDragLeave={handleDragLeave}
                         style={{
                           display: 'flex', gap: 6, marginBottom: 2, alignItems: 'center', cursor: 'move',
-                          padding: '3px 4px', borderRadius: 0,
+                          padding: '3px 4px', borderRadius: 'var(--radius)',
                           border: isDropTarget(tk, 'unlisted', i) ? '2px solid var(--green)' : '2px solid transparent',
                           background: isDropTarget(tk, 'unlisted', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                         }}
@@ -670,7 +602,7 @@ export default function SetupScreen() {
                           style={{
                             width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
                             fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 13,
-                            background: 'var(--bg3)', color: 'var(--text3)', borderRadius: 0, border: 'none',
+                            background: 'var(--bg3)', color: 'var(--text3)', borderRadius: 'var(--radius)', border: 'none',
                             opacity: 0.6
                           }}
                         />
@@ -683,7 +615,7 @@ export default function SetupScreen() {
                         />
                         <button onClick={() => removeUnlisted(tk, i)} style={{
                           background: 'rgba(214,40,34,0.08)', border: 'none', color: 'var(--red)',
-                          width: 24, height: 28, borderRadius: 0, cursor: 'pointer', flexShrink: 0,
+                          width: 24, height: 28, borderRadius: 'var(--radius)', cursor: 'pointer', flexShrink: 0,
                           display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}><X size={13} /></button>
                       </div>
@@ -722,17 +654,30 @@ export default function SetupScreen() {
   );
 }
 
+function InfoGroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      gridColumn: '1 / -1', fontSize: 10, fontWeight: 700, letterSpacing: 1.5,
+      color: 'var(--green)', textTransform: 'uppercase', marginTop: 10, marginBottom: 2
+    }}>
+      {children}
+    </div>
+  );
+}
+
 function MatchInfoSection({ match, updateField }: { match: any; updateField: (f: string, v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const infoFields: [string, string][] = [
-    ['stadium', 'Estádio'], ['referee', 'Árbitro'], ['assistant1', 'Assistente 1'],
-    ['assistant2', 'Assistente 2'], ['var_ref', 'VAR'], ['reporter', 'Reportagem'],
-    ['commentators', 'Comentários']
+  const arbitragemFields: [string, string][] = [
+    ['referee', 'Árbitro'], ['assistant1', 'Assistente 1'],
+    ['assistant2', 'Assistente 2'], ['var_ref', 'VAR'], ['fourthReferee', 'Quarto Árbitro'],
+  ];
+  const transmissaoFields: [string, string][] = [
+    ['reporter', 'Reportagem'], ['commentator1', 'Comentarista 1'], ['commentator2', 'Comentarista 2'],
   ];
 
   return (
     <div style={{
-      background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0,
+      background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
       marginBottom: 14, overflow: 'hidden'
     }}>
       <button onClick={() => setOpen(!open)} style={{
@@ -745,7 +690,48 @@ function MatchInfoSection({ match, updateField }: { match: any; updateField: (f:
       </button>
       {open && (
         <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {infoFields.map(([f, l]) => (
+          <InfoGroupLabel>Informações da Partida</InfoGroupLabel>
+          <div>
+            <Label>Competição</Label>
+            <Input value={match.competition || ''} onChange={v => updateField('competition', v)} placeholder="COMPETIÇÃO" />
+          </div>
+          <div>
+            <Label>Rodada</Label>
+            <Input value={match.round || ''} onChange={v => updateField('round', v)} placeholder="RODADA" />
+          </div>
+          <div>
+            <Label>Data</Label>
+            <input type="date" value={match.matchDate || ''} onChange={e => updateField('matchDate', e.target.value)}
+              style={{
+                background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                padding: '8px 12px', color: 'var(--text)', fontSize: 13, width: '100%',
+                outline: 'none', fontFamily: 'var(--font-body)', colorScheme: 'dark'
+              }} />
+          </div>
+          <div>
+            <Label>Horário</Label>
+            <input type="time" value={match.matchTime || ''} onChange={e => updateField('matchTime', e.target.value)}
+              style={{
+                background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                padding: '8px 12px', color: 'var(--text)', fontSize: 13, width: '100%',
+                outline: 'none', fontFamily: 'var(--font-body)', colorScheme: 'dark'
+              }} />
+          </div>
+          <div>
+            <Label>Estádio</Label>
+            <Input value={match.stadium || ''} onChange={v => updateField('stadium', v)} placeholder="ESTÁDIO" />
+          </div>
+
+          <InfoGroupLabel>Arbitragem</InfoGroupLabel>
+          {arbitragemFields.map(([f, l]) => (
+            <div key={f}>
+              <Label>{l}</Label>
+              <Input value={match[f] || ''} onChange={v => updateField(f, v)} placeholder={l.toUpperCase()} />
+            </div>
+          ))}
+
+          <InfoGroupLabel>Transmissão</InfoGroupLabel>
+          {transmissaoFields.map(([f, l]) => (
             <div key={f}>
               <Label>{l}</Label>
               <Input value={match[f] || ''} onChange={v => updateField(f, v)} placeholder={l.toUpperCase()} />
@@ -782,7 +768,7 @@ function Input({ value, onChange, onBlur, placeholder, style }: {
       onBlur={e => { setFocused(false); onBlur?.(e.target.value); }}
       placeholder={placeholder}
       style={{
-        background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 0,
+        background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
         padding: '8px 12px', color: 'var(--text)', fontSize: 13, width: '100%',
         outline: 'none', fontFamily: 'var(--font-body)', transition: 'border-color .2s',
         cursor: focused ? 'text' : 'pointer',

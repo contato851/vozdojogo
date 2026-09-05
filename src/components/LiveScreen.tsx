@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Sun, Moon, Play, Pause, RotateCcw, Loader2, Check, Link, RadioTower, X,
+  Play, Pause, RotateCcw, Loader2, Check, Link, RadioTower, X,
   Square, List, Target, ChevronsUpDown, ArrowLeftRight, ArrowUp,
   ArrowDown, ArrowRight, RefreshCw, NotebookPen,
 } from 'lucide-react';
@@ -9,8 +9,6 @@ import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
 import { formatClock, getClockElapsed, getClockMinute, sortByNumber } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
-
-const LIVE_THEME_KEY = 'vdj-live-theme';
 import {
   createBroadcast, updateBroadcastState, stopBroadcast,
   getCurrentShareCode, getCurrentBroadcastId, setCurrentBroadcast
@@ -18,7 +16,7 @@ import {
 
 // Small inline logo for live screen
 function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number }) {
-  const { logoUrl } = useTeamLogo(teamName, false);
+  const { logoUrl } = useTeamLogo(teamName);
   const [err, setErr] = useState(false);
   if (!logoUrl || err) return null;
   return (
@@ -33,25 +31,16 @@ function LiveTeamLogo({ teamName, size = 38 }: { teamName: string; size?: number
 }
 
 export default function LiveScreen() {
-  const { match, liveState, setLiveState, showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab, liveView, setLiveView } = useApp();
+  const { match, liveState, setLiveState, showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab, liveView, setLiveView, isDemo } = useApp();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [clockDisplay, setClockDisplay] = useState('00:00');
+  const [editingGoal, setEditingGoal] = useState<number | null>(null);
+  const [editMinuteValue, setEditMinuteValue] = useState('');
+  const [infoTab, setInfoTab] = useState('partida');
   const clockRef = useRef<number>();
   const [shareCode, setShareCode] = useState<string | null>(getCurrentShareCode());
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [liveTheme, setLiveTheme] = useState<'light' | 'dark'>(() => {
-    try { return (localStorage.getItem(LIVE_THEME_KEY) as 'light' | 'dark') || 'light'; } catch { return 'light'; }
-  });
-  const dark = liveTheme === 'dark';
-  const c = (light: string, darkVal: string) => dark ? darkVal : light;
-  const toggleLiveTheme = () => {
-    setLiveTheme(prev => {
-      const next: 'light' | 'dark' = prev === 'light' ? 'dark' : 'light';
-      try { localStorage.setItem(LIVE_THEME_KEY, next); } catch { /* ignore */ }
-      return next;
-    });
-  };
 
   const ls = liveState;
 
@@ -183,6 +172,19 @@ export default function LiveScreen() {
     });
   };
 
+  const saveGoalMinute = (idx: number) => {
+    const val = parseInt(editMinuteValue, 10);
+    if (!isNaN(val) && val >= 0) {
+      setLiveState(prev => {
+        if (!prev) return prev;
+        const goalLog = [...prev.goalLog];
+        goalLog[idx] = { ...goalLog[idx], minute: val };
+        return { ...prev, goalLog };
+      });
+    }
+    setEditingGoal(null);
+  };
+
   const doSub = (tk: 'teamA' | 'teamB', si: number, ri: number) => {
     setLiveState(prev => {
       if (!prev) return prev;
@@ -208,34 +210,37 @@ export default function LiveScreen() {
   const goalLog = ls.goalLog || [];
   const clk = ls.clock;
 
-  const allInfos: [string, string][] = [
-    ['ESTÁDIO', match.stadium], ['ÁRBITRO', match.referee], ['ASSISTENTE 1', match.assistant1],
-    ['ASSISTENTE 2', match.assistant2], ['VAR', match.var_ref], ['REPORTAGEM', match.reporter],
-    ['COMENTÁRIOS', match.commentators]
-  ].filter(x => x[1]) as [string, string][];
+  const formattedDate = match.matchDate
+    ? new Date(`${match.matchDate}T00:00:00`).toLocaleDateString('pt-BR')
+    : '';
+  const filterInfos = (infos: [string, string][]) => infos.filter(x => x[1]) as [string, string][];
+  const infoGroups: { id: string; label: string; infos: [string, string][] }[] = [
+    {
+      id: 'partida', label: 'Partida', infos: filterInfos([
+        ['COMPETIÇÃO', match.competition], ['RODADA', match.round],
+        ['DATA', [formattedDate, match.matchTime].filter(Boolean).join(' · ')],
+        ['ESTÁDIO', match.stadium],
+      ])
+    },
+    {
+      id: 'arbitragem', label: 'Arbitragem', infos: filterInfos([
+        ['ÁRBITRO', match.referee], ['ASSISTENTE 1', match.assistant1],
+        ['ASSISTENTE 2', match.assistant2], ['VAR', match.var_ref],
+        ['QUARTO ÁRBITRO', match.fourthReferee],
+      ])
+    },
+    {
+      id: 'transmissao', label: 'Transmissão', infos: filterInfos([
+        ['REPORTAGEM', match.reporter], ['COMENTARISTA 1', match.commentator1],
+        ['COMENTARISTA 2', match.commentator2],
+      ])
+    },
+  ].filter(g => g.infos.length > 0);
 
   return (
-    <div data-theme={liveTheme} style={{ animation: 'fadeUp .3s ease-out', background: 'var(--bg)' }}>
-      {/* Theme toggle */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <button
-          onClick={toggleLiveTheme}
-          title={dark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px',
-            borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-body)',
-            fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-            background: 'var(--bg3)', border: '1px solid var(--border2)', color: 'var(--text2)',
-            transition: 'all .2s'
-          }}
-        >
-          {dark ? <Moon size={13} /> : <Sun size={13} />}
-          {dark ? 'Modo escuro' : 'Modo claro'}
-        </button>
-      </div>
-
+    <div style={{ animation: 'fadeUp .3s ease-out', background: 'var(--bg)' }}>
       {/* Header with scoreboard */}
-      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0, padding: '10px 12px', marginBottom: 12 }}>
+      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px', marginBottom: 12 }}>
         {/* Main row: TeamA | Clock | TeamB */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {/* Team A */}
@@ -248,25 +253,25 @@ export default function LiveScreen() {
 
           {/* Clock center */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
               <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 600, letterSpacing: 4, minWidth: 90, textAlign: 'center', color: clk.running ? 'var(--green)' : 'var(--text2)' }}>
                 {clockDisplay}
               </span>
               <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
                 <button onClick={toggleClock} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  fontSize: 10, padding: '4px 12px', borderRadius: 0, cursor: 'pointer',
+                  fontSize: 10, padding: '4px 12px', borderRadius: 'var(--radius)', cursor: 'pointer',
                   fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap',
-                  border: `1px solid ${clk.running ? c('rgba(156,100,0,0.3)', 'rgba(255,215,64,0.3)') : 'var(--green)'}`,
-                  background: clk.running ? c('rgba(156,100,0,0.12)', 'rgba(255,215,64,0.15)') : 'var(--green)',
-                  color: clk.running ? 'var(--gold)' : '#fff',
+                  border: `1px solid ${clk.running ? 'rgba(156,100,0,0.3)' : 'var(--green)'}`,
+                  background: clk.running ? 'rgba(156,100,0,0.12)' : 'var(--green)',
+                  color: clk.running ? 'var(--gold)' : 'var(--green-text)',
                   transition: 'all .2s'
                 }}>
                   {clk.running ? <><Pause size={11} /> PAUSAR</> : <><Play size={11} /> INICIAR</>}
                 </button>
                 <button onClick={resetClock} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  fontSize: 10, padding: '4px 12px', borderRadius: 0, cursor: 'pointer',
+                  fontSize: 10, padding: '4px 12px', borderRadius: 'var(--radius)', cursor: 'pointer',
                   fontFamily: 'var(--font-body)', fontWeight: 700, border: '1px solid var(--border)',
                   background: 'var(--bg3)', color: 'var(--text2)', transition: 'all .2s',
                   letterSpacing: 0.5, whiteSpace: 'nowrap'
@@ -290,17 +295,53 @@ export default function LiveScreen() {
         {goalLog.length > 0 && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
             <div style={{ flex: 1, textAlign: 'center' }}>
-              {goalLog.filter(g => g.team === 'teamA').map((g, i) => (
+              {goalLog.map((g, i) => ({ g, i })).filter(({ g }) => g.team === 'teamA').map(({ g, i }) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong>
+                  {editingGoal === i ? (
+                    <input
+                      autoFocus type="number" min={0} value={editMinuteValue}
+                      onChange={e => setEditMinuteValue(e.target.value)}
+                      onBlur={() => saveGoalMinute(i)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveGoalMinute(i); if (e.key === 'Escape') setEditingGoal(null); }}
+                      style={{
+                        width: 36, fontSize: 10, padding: '1px 3px', background: 'var(--bg3)',
+                        border: '1px solid var(--green)', borderRadius: 4, color: 'var(--text)', outline: 'none'
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => { setEditingGoal(i); setEditMinuteValue(String(g.minute)); }}
+                      title="Clique para corrigir o minuto"
+                      style={{ color: 'var(--green)', fontSize: 10, cursor: 'pointer', textDecoration: 'underline dotted' }}
+                    >{g.minute}'</span>
+                  )}
                 </div>
               ))}
             </div>
             <div style={{ flexShrink: 0, width: 140 }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              {goalLog.filter(g => g.team === 'teamB').map((g, i) => (
+              {goalLog.map((g, i) => ({ g, i })).filter(({ g }) => g.team === 'teamB').map(({ g, i }) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: 'var(--text2)', lineHeight: 1.6 }}>
-                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong> <span style={{ color: 'var(--green)', fontSize: 10 }}>{g.minute}'</span>
+                  ⚽ <strong style={{ color: 'var(--text)' }}>{g.playerName}</strong>
+                  {editingGoal === i ? (
+                    <input
+                      autoFocus type="number" min={0} value={editMinuteValue}
+                      onChange={e => setEditMinuteValue(e.target.value)}
+                      onBlur={() => saveGoalMinute(i)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveGoalMinute(i); if (e.key === 'Escape') setEditingGoal(null); }}
+                      style={{
+                        width: 36, fontSize: 10, padding: '1px 3px', background: 'var(--bg3)',
+                        border: '1px solid var(--green)', borderRadius: 4, color: 'var(--text)', outline: 'none'
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => { setEditingGoal(i); setEditMinuteValue(String(g.minute)); }}
+                      title="Clique para corrigir o minuto"
+                      style={{ color: 'var(--green)', fontSize: 10, cursor: 'pointer', textDecoration: 'underline dotted' }}
+                    >{g.minute}'</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -308,52 +349,88 @@ export default function LiveScreen() {
         )}
         {/* Share button */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 10 }}>
-          <button
-            onClick={handleShare}
-            disabled={sharing}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              fontSize: 11, padding: '6px 16px', borderRadius: 0, cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
-              border: `1px solid ${shareCode ? 'var(--green)' : 'var(--border2)'}`,
-              background: shareCode ? 'var(--green-dim)' : 'var(--bg3)',
-              color: shareCode ? 'var(--green)' : 'var(--text2)',
-              transition: 'all .2s'
-            }}
-          >
-            {sharing ? <><Loader2 size={13} className="animate-spin" /> Gerando...</>
-              : copied ? <><Check size={13} /> Link copiado!</>
-              : shareCode ? <><Link size={13} /> Copiar Link</>
-              : <><RadioTower size={13} /> Compartilhar Ao Vivo</>}
-          </button>
-          {shareCode && (
-            <button
-              onClick={handleStopShare}
+          {isDemo ? (
+            <span
+              title="Compartilhamento ao vivo disponível na versão completa"
               style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                fontSize: 11, padding: '6px 12px', borderRadius: 0, cursor: 'pointer',
-                fontFamily: 'var(--font-body)', fontWeight: 700,
-                border: `1px solid ${c('rgba(214,40,34,0.25)', 'rgba(255,61,61,0.3)')}`, background: c('rgba(214,40,34,0.08)', 'rgba(255,61,61,0.1)'),
-                color: 'var(--red)', transition: 'all .2s'
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 11, padding: '6px 16px', borderRadius: 'var(--radius)',
+                fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
+                border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text3)',
+                cursor: 'default'
               }}
             >
-              <X size={13} /> Encerrar
-            </button>
+              <RadioTower size={13} /> Compartilhar disponível na versão completa
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, padding: '6px 16px', borderRadius: 'var(--radius)', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
+                  border: `1px solid ${shareCode ? 'var(--green)' : 'var(--border2)'}`,
+                  background: shareCode ? 'var(--green-dim)' : 'var(--bg3)',
+                  color: shareCode ? 'var(--green)' : 'var(--text2)',
+                  transition: 'all .2s'
+                }}
+              >
+                {sharing ? <><Loader2 size={13} className="animate-spin" /> Gerando...</>
+                  : copied ? <><Check size={13} /> Link copiado!</>
+                  : shareCode ? <><Link size={13} /> Copiar Link</>
+                  : <><RadioTower size={13} /> Compartilhar Ao Vivo</>}
+              </button>
+              {shareCode && (
+                <button
+                  onClick={handleStopShare}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: 11, padding: '6px 12px', borderRadius: 'var(--radius)', cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', fontWeight: 700,
+                    border: '1px solid rgba(214,40,34,0.25)', background: 'rgba(214,40,34,0.08)',
+                    color: 'var(--red)', transition: 'all .2s'
+                  }}
+                >
+                  <X size={13} /> Encerrar
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {/* Match info block */}
-      {allInfos.length > 0 && (
-        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0, padding: '10px 16px', marginBottom: 12, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px 20px' }}>
-          {allInfos.map(([l, v]) => (
-            <div key={l} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 8, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, textTransform: 'uppercase' }}>{l}</div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>{v}</div>
+      {infoGroups.length > 0 && (() => {
+        const activeGroup = infoGroups.find(g => g.id === infoTab) || infoGroups[0];
+        return (
+          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px 10px', marginBottom: 12 }}>
+            {infoGroups.length > 1 && (
+              <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
+                {infoGroups.map(g => (
+                  <button key={g.id} onClick={() => setInfoTab(g.id)} style={{
+                    fontSize: 9, fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', letterSpacing: 0.5, border: 'none', transition: 'all .15s',
+                    background: activeGroup.id === g.id ? 'var(--green-dim)' : 'var(--bg3)',
+                    color: activeGroup.id === g.id ? 'var(--green)' : 'var(--text3)'
+                  }}>
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px 20px' }}>
+              {activeGroup.infos.map(([l, v]) => (
+                <div key={l} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 8, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, textTransform: 'uppercase' }}>{l}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>{v}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Hint */}
       <div style={{ textAlign: 'center', marginBottom: 10, fontSize: 10, color: 'var(--text3)', lineHeight: 1.6 }}>
@@ -380,11 +457,11 @@ export default function LiveScreen() {
         <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <LiveTeamCard team={tA} tk="teamA" openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}
-              addYellow={addYellow} toggleRed={toggleRed} addGoal={addGoal} removeGoal={removeGoal} doSub={doSub} sortOrder={ls.sortOrder} dark={dark} />
+              addYellow={addYellow} toggleRed={toggleRed} addGoal={addGoal} removeGoal={removeGoal} doSub={doSub} sortOrder={ls.sortOrder} />
           </div>
           <div style={{ flex: 1 }}>
             <LiveTeamCard team={tB} tk="teamB" openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}
-              addYellow={addYellow} toggleRed={toggleRed} addGoal={addGoal} removeGoal={removeGoal} doSub={doSub} sortOrder={ls.sortOrder} dark={dark} />
+              addYellow={addYellow} toggleRed={toggleRed} addGoal={addGoal} removeGoal={removeGoal} doSub={doSub} sortOrder={ls.sortOrder} />
           </div>
         </div>
       )}
@@ -392,13 +469,13 @@ export default function LiveScreen() {
       {/* Banks */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 12 }}>
         {[tA, tB].map((t, i) => (
-          <div key={i} style={{ flex: 1, background: 'var(--bg2)', borderRadius: 0, padding: '10px 12px', border: '1px solid var(--border)' }}>
+          <div key={i} style={{ flex: 1, background: 'var(--bg2)', borderRadius: 'var(--radius)', padding: '10px 12px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
               BANCO — {t.name} ({t.reserves.length})
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {t.reserves.length ? t.reserves.map((r, j) => (
-                <span key={j} style={{ background: 'var(--bg3)', padding: '2px 6px', borderRadius: 0, fontSize: 10, color: 'var(--text2)', fontWeight: 500 }}>
+                <span key={j} style={{ background: 'var(--bg3)', padding: '2px 6px', borderRadius: 'var(--radius)', fontSize: 10, color: 'var(--text2)', fontWeight: 500 }}>
                   {r.number} {r.name}
                 </span>
               )) : <span style={{ fontSize: 10, color: 'var(--text3)', fontStyle: 'italic' }}>Sem reservas</span>}
@@ -411,17 +488,17 @@ export default function LiveScreen() {
       <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
         <button onClick={() => { setShowSubs(!showSubs); setShowCur(false); }} style={{
           display: 'flex', alignItems: 'center', gap: 5,
-          fontSize: 10, padding: '6px 14px', borderRadius: 0, cursor: 'pointer',
+          fontSize: 10, padding: '6px 14px', borderRadius: 'var(--radius)', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontWeight: 600, transition: 'all .2s',
-          border: `1px solid ${totalSubs ? c('rgba(214,40,34,0.2)', 'rgba(255,61,61,0.2)') : 'var(--border)'}`,
-          background: totalSubs ? c('rgba(214,40,34,0.06)', 'rgba(255,61,61,0.08)') : 'var(--bg3)',
+          border: `1px solid ${totalSubs ? 'rgba(214,40,34,0.2)' : 'var(--border)'}`,
+          background: totalSubs ? 'rgba(214,40,34,0.06)' : 'var(--bg3)',
           color: totalSubs ? 'var(--red)' : 'var(--text2)'
         }}>
           <RefreshCw size={11} /> Substituições ({totalSubs})
         </button>
         <button onClick={() => { setShowCur(!showCur); setShowSubs(false); }} style={{
           display: 'flex', alignItems: 'center', gap: 5,
-          fontSize: 10, padding: '6px 14px', borderRadius: 0, cursor: 'pointer',
+          fontSize: 10, padding: '6px 14px', borderRadius: 'var(--radius)', cursor: 'pointer',
           fontFamily: 'var(--font-body)', fontWeight: 600, transition: 'all .2s',
           border: `1px solid ${showCur ? 'var(--green)' : 'var(--border)'}`,
           background: showCur ? 'var(--green-dim)' : 'var(--bg3)',
@@ -433,7 +510,7 @@ export default function LiveScreen() {
 
       {/* Subs log */}
       {showSubs && (
-        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0, padding: 20, marginBottom: 10 }}>
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, marginBottom: 10 }}>
           {totalSubs > 0 ? (
             <>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, color: 'var(--text3)', textTransform: 'uppercase', marginBottom: 8 }}>Substituições Realizadas</div>
@@ -463,22 +540,22 @@ export default function LiveScreen() {
 
       {/* Curiosities panel */}
       {showCur && (
-        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 0, padding: 20 }}>
+        <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20 }}>
           <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 12 }}>
-            {[{ id: 'a', t: tA }, { id: 'b', t: tB }].map(tab => (
+            {[{ id: 'geral', t: { name: 'GERAL' } }, { id: 'a', t: tA }, { id: 'b', t: tB }].map(tab => (
               <button key={tab.id} onClick={() => setCurTab(tab.id)} style={{
-                fontSize: 14, fontWeight: 700, padding: '7px 24px', borderRadius: 0, cursor: 'pointer',
+                fontSize: 14, fontWeight: 700, padding: '7px 24px', borderRadius: 'var(--radius)', cursor: 'pointer',
                 fontFamily: 'var(--font-head)', letterSpacing: 2, border: 'none', transition: 'all .15s',
-                background: curTab === tab.id ? tab.t.color : 'var(--bg3)',
-                color: curTab === tab.id ? tab.t.accent : 'var(--text3)'
+                background: curTab === tab.id ? 'var(--green-dim)' : 'var(--bg3)',
+                color: curTab === tab.id ? 'var(--green)' : 'var(--text3)'
               }}>
                 {tab.t.name}
               </button>
             ))}
           </div>
           <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text2)', fontSize: 13, lineHeight: 1.8, padding: 8, minHeight: 60 }}>
-            {(curTab === 'a' ? match.teamA.curiosities : match.teamB.curiosities) || (
-              <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>Sem curiosidades. Adicione na aba Notas.</span>
+            {(curTab === 'geral' ? match.generalNotes : curTab === 'a' ? match.teamA.curiosities : match.teamB.curiosities) || (
+              <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>Sem anotações. Adicione na aba Notas.</span>
             )}
           </div>
         </div>
@@ -488,7 +565,7 @@ export default function LiveScreen() {
 }
 
 /* ── Live Team Card (List View) ── */
-function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, toggleRed, addGoal, removeGoal, doSub, sortOrder, dark }: {
+function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, toggleRed, addGoal, removeGoal, doSub, sortOrder }: {
   team: LiveTeam; tk: 'teamA' | 'teamB';
   openDropdown: string | null; setOpenDropdown: (v: string | null) => void;
   addYellow: (tk: 'teamA' | 'teamB', i: number) => void;
@@ -497,18 +574,28 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
   removeGoal: (tk: 'teamA' | 'teamB', i: number) => void;
   doSub: (tk: 'teamA' | 'teamB', si: number, ri: number) => void;
   sortOrder: string;
-  dark: boolean;
 }) {
   const side = tk === 'teamA' ? 'left' : 'right';
-  const c = (light: string, darkVal: string) => dark ? darkVal : light;
 
   return (
     <div>
-      <div style={{ padding: '12px 16px', borderRadius: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: team.color }}>
-        <LiveTeamLogo teamName={team.name} size={28} />
-        <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700, letterSpacing: 3, color: team.accent }}>{team.name}</span>
+      <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', background: '#fff' }}>
+        <div style={{ display: 'flex', height: 5 }}>
+          <div style={{ flex: 1, background: team.color }} />
+          <div style={{ flex: 1, background: team.accent }} />
+        </div>
+        <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <LiveTeamLogo teamName={team.name} size={28} />
+          <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700, letterSpacing: 3, color: '#030016' }}>{team.name}</span>
+        </div>
       </div>
-      <div style={{ background: c('var(--bg3)', 'rgba(0,0,0,0.3)'), borderRadius: 0 }}>
+      <div style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)' }}>
+        {team.coach && (
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 9, letterSpacing: 1.5, color: 'var(--text3)', fontWeight: 700 }}>TÉCNICO:</span>
+            <span style={{ color: team.accent, fontSize: 12, fontWeight: 600 }}>{team.coach}</span>
+          </div>
+        )}
         {team.starters.map((p, idx) => {
           const did = `${side}-${idx}`;
           const isOpen = openDropdown === did;
@@ -520,13 +607,13 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
               display: 'flex', alignItems: 'center', padding: '6px 12px',
               borderBottom: '1px solid var(--border)', cursor: 'pointer',
               transition: 'background .15s', userSelect: 'none', position: 'relative',
-              background: isOpen ? c('rgba(0,122,67,0.08)', 'rgba(0,200,83,0.1)') : p.subIn ? c('rgba(0,122,67,0.05)', 'rgba(0,200,83,0.06)') : 'transparent'
+              background: isOpen ? 'rgba(0,122,67,0.08)' : p.subIn ? 'rgba(0,122,67,0.05)' : 'transparent'
             }}>
               <span style={{
-                width: 32, height: 32, borderRadius: 0, display: 'flex',
+                width: 32, height: 32, borderRadius: 'var(--radius)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontWeight: 700,
                 fontSize: 15, fontFamily: 'var(--font-head)', marginRight: 10,
-                flexShrink: 0, letterSpacing: 1, background: team.color, color: team.accent
+                flexShrink: 0, letterSpacing: 1, background: 'var(--bg3)', color: 'var(--text)'
               }}>{p.number}</span>
               <span
                 onClick={e => { e.stopPropagation(); if (hasR) setOpenDropdown(isOpen ? null : did); }}
@@ -540,16 +627,16 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
                 <span style={{
                   display: 'flex', alignItems: 'center', gap: 2,
                   fontSize: 8, color: 'var(--green)', fontWeight: 700,
-                  background: 'var(--green-dim)', padding: '2px 6px', borderRadius: 0,
+                  background: 'var(--green-dim)', padding: '2px 6px', borderRadius: 'var(--radius)',
                   marginLeft: 4, flexShrink: 0, letterSpacing: 0.5
                 }}><ArrowUp size={9} /> ENTROU</span>
               )}
               <div style={{ display: 'flex', gap: 3, marginLeft: 'auto', marginRight: 4, flexShrink: 0 }}>
-                <EvBtn active={yc > 0} activeClass={yc >= 2 ? 'y2' : 'y'} onClick={e => { e.stopPropagation(); addYellow(tk, idx); }} dark={dark}>
+                <EvBtn active={yc > 0} activeClass={yc >= 2 ? 'y2' : 'y'} onClick={e => { e.stopPropagation(); addYellow(tk, idx); }}>
                   <Square size={11} fill="var(--yellow-card)" stroke="none" />{yc > 1 && <span className="ev-count">{yc}</span>}
                 </EvBtn>
-                <EvBtn active={!!p.redCard} activeClass="r" onClick={e => { e.stopPropagation(); toggleRed(tk, idx); }} dark={dark}><Square size={11} fill="var(--red)" stroke="none" /></EvBtn>
-                <EvBtn active={(p.goals || 0) > 0} activeClass="g" dark={dark}
+                <EvBtn active={!!p.redCard} activeClass="r" onClick={e => { e.stopPropagation(); toggleRed(tk, idx); }}><Square size={11} fill="var(--red)" stroke="none" /></EvBtn>
+                <EvBtn active={(p.goals || 0) > 0} activeClass="g"
                   onClick={e => { e.stopPropagation(); addGoal(tk, idx); }}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); removeGoal(tk, idx); }}
                 >
@@ -568,8 +655,8 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
                 <div onClick={e => e.stopPropagation()} style={{
                   position: 'absolute', top: '100%', left: 4, right: 4,
                   background: 'var(--bg2)', border: '1px solid var(--green)',
-                  borderRadius: 0, zIndex: 1000, maxHeight: 240,
-                  overflowY: 'auto', boxShadow: c('0 10px 30px rgba(20,23,28,.18)', '0 10px 30px rgba(0,0,0,.6)'),
+                  borderRadius: 'var(--radius)', zIndex: 1000, maxHeight: 240,
+                  overflowY: 'auto', boxShadow: '0 10px 30px rgba(20,23,28,.18)',
                   animation: 'fadeSlide .15s ease-out'
                 }}>
                   <div style={{
@@ -589,7 +676,7 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
                       <span style={{
-                        width: 28, height: 28, borderRadius: 0, background: 'var(--bg3)',
+                        width: 28, height: 28, borderRadius: 'var(--radius)', background: 'var(--bg3)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-head)', marginRight: 10
                       }}>{r.number}</span>
@@ -601,40 +688,35 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
             </div>
           );
         })}
-        <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 9, letterSpacing: 1.5, color: 'var(--text3)', fontWeight: 700 }}>TÉCNICO:</span>
-          <span style={{ color: team.accent, fontSize: 12, fontWeight: 600 }}>{team.coach}</span>
-        </div>
       </div>
     </div>
   );
 }
 
 /* ── Event Button ── */
-function EvBtn({ active, activeClass, onClick, onContextMenu, children, dark }: {
+function EvBtn({ active, activeClass, onClick, onContextMenu, children }: {
   active: boolean; activeClass: string;
   onClick: (e: React.MouseEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   children: React.ReactNode;
-  dark: boolean;
 }) {
   const bgMap: Record<string, string> = {
     y: 'rgba(255,204,0,0.2)', y2: 'rgba(255,204,0,0.4)',
-    r: dark ? 'rgba(255,61,61,0.2)' : 'rgba(214,40,34,0.2)',
-    g: dark ? 'rgba(0,200,83,0.15)' : 'rgba(0,122,67,0.12)'
+    r: 'rgba(214,40,34,0.2)',
+    g: 'rgba(0,122,67,0.12)'
   };
   const shadowMap: Record<string, string> = {
     y: '0 0 6px rgba(255,204,0,0.3)', y2: '0 0 10px rgba(255,204,0,0.4)',
-    r: dark ? '0 0 6px rgba(255,61,61,0.3)' : '0 0 6px rgba(214,40,34,0.25)',
-    g: dark ? '0 0 6px rgba(0,200,83,0.3)' : '0 0 6px rgba(0,122,67,0.25)'
+    r: '0 0 6px rgba(214,40,34,0.25)',
+    g: '0 0 6px rgba(0,122,67,0.25)'
   };
 
   return (
     <button onClick={onClick} onContextMenu={onContextMenu} style={{
-      width: 24, height: 24, borderRadius: 0, border: 'none', cursor: 'pointer',
+      width: 24, height: 24, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
       fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'all .15s', position: 'relative', lineHeight: 1,
-      background: active ? bgMap[activeClass] : (dark ? 'rgba(255,255,255,0.02)' : 'rgba(20,23,28,0.04)'),
+      background: active ? bgMap[activeClass] : 'rgba(20,23,28,0.04)',
       opacity: active ? 1 : (activeClass === 'g' ? 0.4 : 0.6),
       boxShadow: active ? shadowMap[activeClass] : 'none'
     }}>
@@ -794,7 +876,7 @@ function TacticalField({ ls, setLiveState, match }: { ls: LiveState; setLiveStat
 
   return (
     <div>
-      <div style={{ position: 'relative', width: '100%', paddingTop: '62%', background: '#3a8c3f', borderRadius: 0, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.15)', marginBottom: 12 }}>
+      <div style={{ position: 'relative', width: '100%', paddingTop: '62%', background: '#3a8c3f', borderRadius: 'var(--radius)', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.15)', marginBottom: 12 }}>
         <div ref={fieldRef} style={{ position: 'absolute', inset: 0 }}>
           {/* Grass stripes */}
           <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 9.09%,rgba(0,0,0,0.04) 9.09%,rgba(0,0,0,0.04) 18.18%)' }} />
@@ -832,7 +914,7 @@ function ViewBtn({ active, onClick, children }: { active: boolean; onClick: () =
   return (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 5,
-      fontSize: 11, padding: '5px 14px', borderRadius: 0, cursor: 'pointer',
+      fontSize: 11, padding: '5px 14px', borderRadius: 'var(--radius)', cursor: 'pointer',
       fontFamily: 'var(--font-body)', fontWeight: 600, transition: 'all .2s',
       border: `1px solid ${active ? 'var(--green)' : 'var(--border)'}`,
       background: active ? 'var(--green-dim)' : 'var(--bg3)',

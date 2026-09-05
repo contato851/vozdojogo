@@ -19,7 +19,11 @@ export function newMatchData(): Match {
   return {
     id: genId(),
     createdAt: new Date().toISOString(),
-    stadium: '', referee: '', assistant1: '', assistant2: '', var_ref: '', reporter: '', commentators: '',
+    competition: '', round: '', matchDate: '', matchTime: '',
+    stadium: '', referee: '', assistant1: '', assistant2: '', var_ref: '', fourthReferee: '',
+    reporter: '', commentator1: '', commentator2: '',
+    generalNotes: '',
+    aiNotesGenerated: false,
     sortOrder: 'number',
     teamA: { name: 'TIME A', coach: '', color: '#0a5c36', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'a-s'), reserves: makeEmpty(12, 'a-r'), unlisted: [], curiosities: '' },
     teamB: { name: 'TIME B', coach: '', color: '#cc0000', accent: '#ffd740', formation: '4-4-2', starters: makeEmpty(11, 'b-s'), reserves: makeEmpty(12, 'b-r'), unlisted: [], curiosities: '' },

@@ -4,12 +4,11 @@ import { TeamDBEntry } from '../data/types';
 
 interface TeamLogoProps {
   team: TeamDBEntry;
-  isNationalTeam: boolean;
   size?: number;
 }
 
-export default function TeamLogo({ team, isNationalTeam, size = 48 }: TeamLogoProps) {
-  const { logoUrl, loading } = useTeamLogo(team.name, isNationalTeam);
+export default function TeamLogo({ team, size = 48 }: TeamLogoProps) {
+  const { logoUrl, loading } = useTeamLogo(team.name);
   const [imgError, setImgError] = useState(false);
 
   if (logoUrl && !imgError) {
@@ -21,7 +20,7 @@ export default function TeamLogo({ team, isNationalTeam, size = 48 }: TeamLogoPr
         style={{
           width: size, height: size,
           objectFit: 'contain',
-          borderRadius: 0,
+          borderRadius: 'var(--radius)',
           flexShrink: 0,
         }}
         loading="lazy"
