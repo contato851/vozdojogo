@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play, Pause, RotateCcw, Loader2, Check, Link, RadioTower, X,
   Square, List, Target, ChevronsUpDown, ArrowLeftRight, ArrowUp,
-  ArrowDown, ArrowRight, RefreshCw, NotebookPen,
+  ArrowDown, ArrowRight, RefreshCw, NotebookPen, Maximize, Minimize,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LiveTeam, Player, LiveState } from '../data/types';
@@ -41,6 +41,7 @@ export default function LiveScreen() {
   const [shareCode, setShareCode] = useState<string | null>(getCurrentShareCode());
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const ls = liveState;
 
@@ -92,6 +93,20 @@ export default function LiveScreen() {
   const handleStopShare = async () => {
     await stopBroadcast();
     setShareCode(null);
+  };
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
   };
 
 
@@ -398,6 +413,18 @@ export default function LiveScreen() {
               )}
             </>
           )}
+          <button
+            onClick={toggleFullscreen}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 11, padding: '6px 16px', borderRadius: 'var(--radius)', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
+              border: '1px solid var(--border2)', background: 'var(--bg3)', color: 'var(--text2)',
+              transition: 'all .2s'
+            }}
+          >
+            {isFullscreen ? <><Minimize size={13} /> Sair da Tela Cheia</> : <><Maximize size={13} /> Tela Cheia</>}
+          </button>
         </div>
       </div>
 
