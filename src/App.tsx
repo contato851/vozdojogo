@@ -50,9 +50,7 @@ function SubscriptionGate() {
   const { subscribed, loading } = useSubscription();
 
   if (loading) return <LoadingScreen />;
-  // Paywall temporarily disabled while the Mercado Pago billing backend is
-  // configured/tested end-to-end. Re-enable
-  // `if (!subscribed) return <PaywallScreen />;` once ready to charge for real.
+  if (!subscribed) return <PaywallScreen />;
 
   return (
     <AppProvider>
