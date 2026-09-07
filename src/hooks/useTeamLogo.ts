@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
-const CACHE_KEY = 'vdj-team-logos';
+// Bumped to v2 to invalidate a wrong cached logo for ATHLETIC CLUB (was
+// resolving to Athletic Club de Bilbao instead of the Minas Gerais club).
+const CACHE_KEY = 'vdj-team-logos-v2';
 
 // Wikipedia search terms for clubs that need special mapping
 const WIKI_OVERRIDES: Record<string, string> = {
@@ -65,6 +67,7 @@ const WIKI_OVERRIDES: Record<string, string> = {
   'FERROVIÁRIA': 'Associação Ferroviária de Esportes',
   'XV DE PIRACICABA': 'Esporte Clube XV de Novembro (Piracicaba)',
   'INTER DE LIMEIRA': 'Associação Atlética Internacional (Limeira)',
+  'ATHLETIC CLUB': 'Athletic Club (Minas Gerais)',
 };
 
 function getLogoCache(): Record<string, string | null> {
