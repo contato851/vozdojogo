@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginScreen({ embedded = false }: { embedded?: boolean }) {
-  const { user, loading: authLoading, signIn, resetPassword } = useAuth();
+export default function LoginScreen({ embedded = false, initialMode = 'login' }: { embedded?: boolean; initialMode?: 'login' | 'signup' }) {
+  const { user, loading: authLoading, signIn, signUp, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
   const [shake, setShake] = useState(false);
-  const [mode, setMode] = useState<'login' | 'reset'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(initialMode);
+
+  useEffect(() => {
+    setMode(initialMode);
+    setMsg(null);
+  }, [initialMode]);
 
   if (authLoading) return null;
   if (user) return <Navigate to="/escalacao" replace />;
@@ -46,12 +51,14 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
     setSubmitting(true);
     setMsg(null);
 
-    const { error } = await signIn(email, password);
+    const { error } = mode === 'signup' ? await signUp(email, password) : await signIn(email, password);
 
     if (error) {
       setMsg({ text: error, type: 'error' });
       setShake(true);
       setTimeout(() => setShake(false), 400);
+    } else if (mode === 'signup') {
+      setMsg({ text: 'Conta criada! Se pedir confirmação, verifique seu e-mail.', type: 'success' });
     } else {
       setMsg({ text: 'Login realizado!', type: 'success' });
     }
@@ -59,7 +66,7 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') (mode === 'login' ? doAction() : doReset());
+    if (e.key === 'Enter') (mode === 'reset' ? doReset() : doAction());
   };
 
   return (
@@ -86,7 +93,7 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
             fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700,
             color: 'var(--text)', letterSpacing: 1, marginBottom: 24
           }}>
-            ENTRAR NA SUA CONTA
+            {mode === 'signup' ? 'CRIAR SUA CONTA' : 'ENTRAR NA SUA CONTA'}
           </div>
         )}
 
@@ -104,7 +111,7 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
             marginBottom: 10, transition: 'border-color .3s'
           }}
         />
-        {mode === 'login' && (
+        {mode !== 'reset' && (
           <input
             type="password"
             placeholder="Senha"
@@ -121,7 +128,7 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
           />
         )}
         <button
-          onClick={mode === 'login' ? doAction : doReset}
+          onClick={mode === 'reset' ? doReset : doAction}
           disabled={submitting}
           style={{
             width: '100%', marginTop: 6, padding: 14, background: 'var(--green)',
@@ -130,19 +137,36 @@ export default function LoginScreen({ embedded = false }: { embedded?: boolean }
             transition: 'all .2s', letterSpacing: 1, opacity: submitting ? 0.5 : 1
           }}
         >
-          {mode === 'login'
-            ? (submitting ? 'ENTRANDO...' : 'ENTRAR')
-            : (submitting ? 'ENVIANDO...' : 'ENVIAR LINK DE REDEFINIÇÃO')}
+          {mode === 'reset'
+            ? (submitting ? 'ENVIANDO...' : 'ENVIAR LINK DE REDEFINIÇÃO')
+            : mode === 'signup'
+              ? (submitting ? 'CRIANDO CONTA...' : 'CRIAR CONTA')
+              : (submitting ? 'ENTRANDO...' : 'ENTRAR')}
         </button>
 
-        <div
-          onClick={() => { setMode(mode === 'login' ? 'reset' : 'login'); setMsg(null); }}
-          style={{
-            marginTop: 14, fontSize: 12, color: 'var(--text2)', cursor: 'pointer',
-            textDecoration: 'underline', textUnderlineOffset: 3
-          }}
-        >
-          {mode === 'login' ? 'Esqueci minha senha' : 'Voltar para o login'}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 14, flexWrap: 'wrap' }}>
+          {mode !== 'reset' && (
+            <div
+              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg(null); }}
+              style={{
+                fontSize: 12, color: 'var(--text2)', cursor: 'pointer',
+                textDecoration: 'underline', textUnderlineOffset: 3
+              }}
+            >
+              {mode === 'login' ? 'Não tem conta? Criar conta' : 'Já tem conta? Entrar'}
+            </div>
+          )}
+          {mode !== 'signup' && (
+            <div
+              onClick={() => { setMode(mode === 'reset' ? 'login' : 'reset'); setMsg(null); }}
+              style={{
+                fontSize: 12, color: 'var(--text2)', cursor: 'pointer',
+                textDecoration: 'underline', textUnderlineOffset: 3
+              }}
+            >
+              {mode === 'reset' ? 'Voltar para o login' : 'Esqueci minha senha'}
+            </div>
+          )}
         </div>
 
         {msg && (

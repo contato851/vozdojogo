@@ -1,4 +1,5 @@
-import { Users, Target, Activity } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Target, Activity, Video } from 'lucide-react';
 import Logo from './Logo';
 import LoginScreen from './LoginScreen';
 
@@ -10,8 +11,8 @@ const FEATURES = [
   },
   {
     icon: Target,
-    title: 'Campo tático interativo',
-    desc: 'Arraste os jogadores no campo. Veja a formação em tempo real.',
+    title: 'Visualize no seu estilo',
+    desc: 'Veja os jogadores em lista ou campo tático. Ajuste como quiser.',
   },
   {
     icon: Activity,
@@ -21,6 +22,13 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  const goToAuth = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    document.getElementById('entrar')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div>
       {/* === HERO === */}
@@ -33,7 +41,7 @@ export default function LandingPage() {
           color: 'var(--text)', letterSpacing: 1, lineHeight: 1.15,
           maxWidth: 640, margin: '0 auto 16px'
         }}>
-          Tudo que você precisa pra narrar. Na palma da mão.
+          Tudo que você precisa pra narrar.
         </h1>
         <p style={{
           fontSize: 16, color: 'var(--text2)', maxWidth: 480,
@@ -42,16 +50,43 @@ export default function LandingPage() {
           Escalação, substituições, cartões, gols e cronômetro — numa tela só.
           Feito por narradores, pra narradores.
         </p>
-        <a
-          href="#entrar"
-          className="btn-green"
-          style={{
-            display: 'inline-block', padding: '14px 40px', fontSize: 15,
-            letterSpacing: 1, textDecoration: 'none'
-          }}
-        >
-          ENTRAR
-        </a>
+
+        <div style={{
+          display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'flex-start',
+          flexWrap: 'wrap'
+        }}>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 10 }}>
+              Já tem uma assinatura?
+            </div>
+            <button
+              onClick={() => goToAuth('login')}
+              className="btn-green"
+              style={{
+                padding: '14px 40px', fontSize: 15,
+                letterSpacing: 1, border: 'none', cursor: 'pointer'
+              }}
+            >
+              ENTRAR
+            </button>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 10 }}>
+              Pronto pra subir de nível?
+            </div>
+            <button
+              onClick={() => goToAuth('signup')}
+              style={{
+                padding: '14px 40px', fontSize: 15, letterSpacing: 1,
+                background: 'transparent', color: 'var(--green)',
+                border: '2px solid var(--green)', borderRadius: 'var(--radius)',
+                cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700
+              }}
+            >
+              QUERO ASSINAR
+            </button>
+          </div>
+        </div>
 
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -79,7 +114,26 @@ export default function LandingPage() {
 
       {/* === LOGIN === */}
       <div id="entrar" style={{ borderTop: '1px solid var(--border)' }}>
-        <LoginScreen embedded />
+        <LoginScreen embedded initialMode={authMode} />
+      </div>
+
+      {/* === VÍDEO === */}
+      <div style={{ borderTop: '1px solid var(--border)', padding: '56px 20px', textAlign: 'center' }}>
+        <div style={{
+          fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700,
+          color: 'var(--text)', letterSpacing: 0.5, marginBottom: 24
+        }}>
+          Veja como funciona
+        </div>
+        <div style={{
+          maxWidth: 720, margin: '0 auto', aspectRatio: '16 / 9',
+          background: 'var(--bg2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 10
+        }}>
+          <Video size={32} color="var(--text2)" />
+          <div style={{ fontSize: 13, color: 'var(--text2)' }}>Vídeo em breve</div>
+        </div>
       </div>
     </div>
   );
