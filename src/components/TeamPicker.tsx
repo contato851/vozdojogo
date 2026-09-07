@@ -53,11 +53,6 @@ export default function TeamPicker({ onSelect, onClose }: TeamPickerProps) {
     }
   }, [teams.length, mode]);
 
-  const handleSaveCustom = async (team: any) => {
-    await saveTeam(team);
-    setEditing(null);
-  };
-
   const handleSelectCustom = (ct: CustomTeam) => {
     onSelect({
       name: ct.name,
@@ -66,6 +61,27 @@ export default function TeamPicker({ onSelect, onClose }: TeamPickerProps) {
       logo: ct.logo_url,
       customPlayers: ct.players,
     });
+  };
+
+  const handleSaveCustom = async (team: any) => {
+    const saved = await saveTeam(team);
+    setEditing(null);
+    // Creating/editing a team only saves it to "Meus Times" -- without this,
+    // the user still has to find it in the list and click "Selecionar"
+    // separately, which reads as a bug ("selecione um time" right after
+    // they just picked one).
+    if (saved) {
+      handleSelectCustom({
+        id: saved.id,
+        name: saved.name,
+        abbreviation: saved.abbreviation,
+        color: saved.color,
+        accent: saved.accent,
+        logo_url: saved.logo_url,
+        players: (saved.players as any[]) || [],
+      });
+      onClose();
+    }
   };
 
   return (
