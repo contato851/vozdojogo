@@ -92,7 +92,14 @@ serve(async (req) => {
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { id: user.id });
 
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Count generations by calendar day in Brazil time (UTC-3, no DST since
+    // 2019), not a rolling 24h window -- otherwise a generation late in the
+    // day still blocks the user early the next day.
+    const BR_OFFSET_MS = 3 * 60 * 60 * 1000;
+    const brNow = new Date(Date.now() - BR_OFFSET_MS);
+    const since = new Date(
+      Date.UTC(brNow.getUTCFullYear(), brNow.getUTCMonth(), brNow.getUTCDate()) + BR_OFFSET_MS
+    ).toISOString();
     const { count } = await supabase
       .from("ai_generation_log")
       .select("*", { count: "exact", head: true })
