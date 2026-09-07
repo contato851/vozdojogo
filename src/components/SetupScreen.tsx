@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, Play, Home, Plane, FolderOpen, Goal, RefreshCw, Save,
   GripVertical, Plus, ClipboardList, ChevronUp, ChevronDown,
@@ -24,8 +25,9 @@ function LiveTeamLogo({ teamName, size = 38, logo }: { teamName: string; size?: 
 }
 
 export default function SetupScreen() {
-  const { match, setMatch, liveState, startLive, resetLive, newMatch, exportMatch, importMatch } = useApp();
+  const { match, setMatch, liveState, startLive, resetLive, newMatch, exportMatch, importMatch, isDemo } = useApp();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [pickerTeam, setPickerTeam] = useState<'teamA' | 'teamB' | null>(null);
   const [savingLineup, setSavingLineup] = useState<'teamA' | 'teamB' | null>(null);
   const [lineupError, setLineupError] = useState<string | null>(null);
@@ -368,11 +370,19 @@ export default function SetupScreen() {
           </div>
         </div>
 
-        {/* Start button */}
+        {/* Start button -- once live, this only navigates to Ao Vivo instead
+            of re-running startLive, which would silently wipe the clock,
+            goals and cards with no confirmation (unlike Reiniciar). Name/
+            number corrections already reach the live squad on their own via
+            the sync effect in AppContext. */}
         {teamsSelected && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>
-            <button onClick={startLive} className="btn-green" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 16, letterSpacing: 2 }}>
-              <Play size={15} fill="currentColor" /> INICIAR TRANSMISSÃO
+            <button
+              onClick={hasLive ? () => navigate(`${isDemo ? '/demo' : ''}/ao-vivo`) : startLive}
+              className="btn-green"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 16, letterSpacing: 2 }}
+            >
+              <Play size={15} fill="currentColor" /> {hasLive ? 'AJUSTAR TRANSMISSÃO' : 'INICIAR TRANSMISSÃO'}
             </button>
             {hasLive && <button onClick={resetLive} className="btn-red" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', fontSize: 13 }}><RefreshCw size={13} /> Reiniciar</button>}
           </div>
