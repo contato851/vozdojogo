@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { ClipboardList, NotebookPen, Check } from 'lucide-react';
+import { ClipboardList, NotebookPen, Check, Radio } from 'lucide-react';
 import { AppProvider, useApp } from '../context/AppContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import Logo from './Logo';
 import SetupScreen from './SetupScreen';
 import NotesScreen from './NotesScreen';
@@ -11,11 +12,54 @@ function DemoTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
+  const isMobile = useIsMobile();
 
   const goLive = () => {
     if (liveState) navigate('/demo/ao-vivo');
     else startLive();
   };
+
+  if (isMobile) {
+    return (
+      <>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 0', marginBottom: 16, borderBottom: '1px solid var(--border)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Logo size="md" />
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: 1.5, padding: '3px 8px',
+              background: 'var(--green-dim)', color: 'var(--green)', borderRadius: 'var(--radius)',
+              border: '1px solid var(--green)'
+            }}>
+              DEMO
+            </span>
+          </div>
+          {savedIndicator && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--green)', letterSpacing: 1 }}><Check size={11} /> Salvo</span>
+          )}
+        </div>
+
+        <div style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 500,
+          display: 'flex', background: 'var(--bg2)', borderTop: '1px solid var(--border)',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}>
+          <TabBtn active={path === '/demo' || path === '/demo/escalacao'} onClick={() => navigate('/demo/escalacao')}>
+            <ClipboardList size={18} /> Escalação
+          </TabBtn>
+          <TabBtn active={path === '/demo/notas'} onClick={() => navigate('/demo/notas')}>
+            <NotebookPen size={18} /> Notas
+          </TabBtn>
+          <TabBtn active={path === '/demo/ao-vivo'} onClick={goLive} color="var(--red)">
+            <Radio size={18} /> Ao Vivo
+          </TabBtn>
+        </div>
+        <div style={{ height: 64 }} />
+      </>
+    );
+  }
 
   return (
     <div style={{
@@ -61,6 +105,23 @@ function DemoTopBar() {
         <span style={{ fontSize: 10, color: 'var(--text3)' }}>Modo demonstração</span>
       </div>
     </div>
+  );
+}
+
+function TabBtn({ active, onClick, color, children }: { active: boolean; onClick: () => void; color?: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+        padding: '8px 4px 10px', background: 'none', border: 'none', cursor: 'pointer',
+        color: active ? (color || 'var(--green)') : 'var(--text3)',
+        fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-body)', letterSpacing: 0.3,
+        transition: 'color .15s'
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

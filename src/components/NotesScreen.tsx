@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles, Loader2, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useTeamLogo } from '../hooks/useTeamLogo';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { supabase } from '@/integrations/supabase/client';
 
 function NoteTeamLogo({ teamName, color, accent, size = 38, logo }: { teamName: string; color: string; accent: string; size?: number; logo?: string | null }) {
@@ -29,6 +30,7 @@ function NoteTeamLogo({ teamName, color, accent, size = 38, logo }: { teamName: 
 
 export default function NotesScreen() {
   const { match, setMatch, isDemo } = useApp();
+  const isMobile = useIsMobile();
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
@@ -141,7 +143,7 @@ export default function NotesScreen() {
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 14 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 14 }}>
         {(['teamA', 'teamB'] as const).map(tk => {
           const t = match[tk];
           return (

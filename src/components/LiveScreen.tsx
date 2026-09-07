@@ -9,6 +9,7 @@ import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
 import { formatClock, getClockElapsed, getClockMinute, sortByNumber } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   createBroadcast, updateBroadcastState, stopBroadcast,
   getCurrentShareCode, getCurrentBroadcastId, setCurrentBroadcast
@@ -32,6 +33,8 @@ function LiveTeamLogo({ teamName, size = 38, logo }: { teamName: string; size?: 
 
 export default function LiveScreen() {
   const { match, liveState, setLiveState, showSubs, setShowSubs, showCur, setShowCur, curTab, setCurTab, liveView, setLiveView, isDemo } = useApp();
+  const isMobile = useIsMobile();
+  const [mobileTeamTab, setMobileTeamTab] = useState<'teamA' | 'teamB'>('teamA');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [clockDisplay, setClockDisplay] = useState('00:00');
   const [editingGoal, setEditingGoal] = useState<number | null>(null);
@@ -256,20 +259,25 @@ export default function LiveScreen() {
     <div style={{ animation: 'fadeUp .3s ease-out', background: 'var(--bg)' }}>
       {/* Header with scoreboard */}
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 12px', marginBottom: 12 }}>
-        {/* Main row: TeamA | Clock | TeamB */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {/* Main row: TeamA | Clock | TeamB -- on mobile the clock wraps onto
+            its own line above the teams so nothing gets squeezed */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {/* Team A */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <LiveTeamLogo teamName={tA.name} logo={tA.logo} size={80} />
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
+          <div style={{ order: 0, flex: isMobile ? '1 1 40%' : 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 8 }}>
+            <LiveTeamLogo teamName={tA.name} logo={tA.logo} size={isMobile ? 44 : 80} />
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: isMobile ? 30 : 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsA}
             </div>
           </div>
 
           {/* Clock center */}
-          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
-              <span style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 600, letterSpacing: 4, minWidth: 90, textAlign: 'center', color: clk.running ? 'var(--green)' : 'var(--text2)' }}>
+          <div style={{
+            order: isMobile ? -1 : 1, flexBasis: isMobile ? '100%' : 'auto',
+            flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+            padding: '0 8px', marginBottom: isMobile ? 8 : 0
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, padding: isMobile ? '5px 12px' : '6px 16px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+              <span style={{ fontFamily: 'var(--font-head)', fontSize: isMobile ? 26 : 36, fontWeight: 600, letterSpacing: isMobile ? 2 : 4, minWidth: isMobile ? 70 : 90, textAlign: 'center', color: clk.running ? 'var(--green)' : 'var(--text2)' }}>
                 {clockDisplay}
               </span>
               <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
@@ -298,11 +306,11 @@ export default function LiveScreen() {
           </div>
 
           {/* Team B */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}>
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
+          <div style={{ order: 2, flex: isMobile ? '1 1 40%' : 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: isMobile ? 6 : 8 }}>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: isMobile ? 30 : 48, fontWeight: 700, letterSpacing: 2, lineHeight: 1 }}>
               {goalsB}
             </div>
-            <LiveTeamLogo teamName={tB.name} logo={tB.logo} size={80} />
+            <LiveTeamLogo teamName={tB.name} logo={tB.logo} size={isMobile ? 44 : 80} />
           </div>
         </div>
 
@@ -480,6 +488,19 @@ export default function LiveScreen() {
 
       {liveView === 'field' ? (
         <TacticalField ls={ls} setLiveState={setLiveState} match={match} />
+      ) : isMobile ? (
+        <>
+          {/* Mobile: one team's lineup at a time, switched via tabs -- two
+              full 11-player lists stacked would be an extremely long scroll */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+            <MobileTeamTab active={mobileTeamTab === 'teamA'} onClick={() => setMobileTeamTab('teamA')} team={tA} />
+            <MobileTeamTab active={mobileTeamTab === 'teamB'} onClick={() => setMobileTeamTab('teamB')} team={tB} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <LiveTeamCard team={mobileTeamTab === 'teamA' ? tA : tB} tk={mobileTeamTab} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}
+              addYellow={addYellow} toggleRed={toggleRed} addGoal={addGoal} removeGoal={removeGoal} doSub={doSub} sortOrder={ls.sortOrder} />
+          </div>
+        </>
       ) : (
         <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
@@ -494,7 +515,7 @@ export default function LiveScreen() {
       )}
 
       {/* Banks */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 14, marginBottom: 12 }}>
         {[tA, tB].map((t, i) => (
           <div key={i} style={{ flex: 1, background: 'var(--bg2)', borderRadius: 'var(--radius)', padding: '10px 12px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 9, color: 'var(--text3)', letterSpacing: 1.5, fontWeight: 700, marginBottom: 6 }}>
@@ -737,11 +758,13 @@ function EvBtn({ active, activeClass, onClick, onContextMenu, children }: {
     r: '0 0 6px rgba(214,40,34,0.25)',
     g: '0 0 6px rgba(0,122,67,0.25)'
   };
+  const isMobile = useIsMobile();
+  const size = isMobile ? 34 : 24;
 
   return (
     <button onClick={onClick} onContextMenu={onContextMenu} style={{
-      width: 24, height: 24, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
-      fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: size, height: size, borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer',
+      fontSize: isMobile ? 15 : 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'all .15s', position: 'relative', lineHeight: 1,
       background: active ? bgMap[activeClass] : 'rgba(20,23,28,0.04)',
       opacity: active ? 1 : (activeClass === 'g' ? 0.4 : 0.6),
@@ -934,6 +957,21 @@ function TacticalField({ ls, setLiveState, match }: { ls: LiveState; setLiveStat
         <span><strong style={{ color: 'var(--text2)' }}>{rightLabel}</strong> :{rightName}</span>
       </div>
     </div>
+  );
+}
+
+function MobileTeamTab({ active, onClick, team }: { active: boolean; onClick: () => void; team: LiveTeam }) {
+  return (
+    <button onClick={onClick} style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+      padding: '8px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
+      fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, letterSpacing: 1,
+      border: `1px solid ${active ? team.color : 'var(--border)'}`,
+      background: active ? 'var(--green-dim)' : 'var(--bg3)',
+      color: active ? 'var(--text)' : 'var(--text3)', transition: 'all .15s'
+    }}>
+      {team.name}
+    </button>
   );
 }
 

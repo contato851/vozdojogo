@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardList, NotebookPen, Settings, Check } from 'lucide-react';
+import { ClipboardList, NotebookPen, Settings, Check, Radio } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import Logo from './Logo';
 
 export default function TopBar() {
@@ -10,6 +11,7 @@ export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname;
+  const isMobile = useIsMobile();
 
   const goLive = () => {
     if (liveState) {
@@ -22,6 +24,45 @@ export default function TopBar() {
   const doLogout = async () => {
     await signOut();
   };
+
+  if (isMobile) {
+    return (
+      <>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 0', marginBottom: 16, borderBottom: '1px solid var(--border)'
+        }}>
+          <Logo size="md" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {savedIndicator && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--green)', letterSpacing: 1 }}><Check size={11} /> Salvo</span>
+            )}
+            <IconBtn onClick={() => navigate('/configuracoes')} title="Configurações"><Settings size={15} /></IconBtn>
+            <IconBtn onClick={doLogout} title="Sair" hoverColor="var(--red)"><span style={{ fontSize: 11, fontWeight: 600 }}>Sair</span></IconBtn>
+          </div>
+        </div>
+
+        {/* Bottom tab bar */}
+        <div style={{
+          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 500,
+          display: 'flex', background: 'var(--bg2)', borderTop: '1px solid var(--border)',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}>
+          <TabBtn active={path === '/' || path === '/escalacao'} onClick={() => navigate('/escalacao')}>
+            <ClipboardList size={18} /> Escalação
+          </TabBtn>
+          <TabBtn active={path === '/notas'} onClick={() => navigate('/notas')}>
+            <NotebookPen size={18} /> Notas
+          </TabBtn>
+          <TabBtn active={path === '/ao-vivo'} onClick={goLive} color="var(--red)">
+            <Radio size={18} /> Ao Vivo
+          </TabBtn>
+        </div>
+        {/* Spacer so content isn't hidden behind the fixed tab bar */}
+        <div style={{ height: 64 }} />
+      </>
+    );
+  }
 
   return (
     <div style={{
@@ -99,6 +140,43 @@ function NavBtn({ active, onClick, children }: { active: boolean; onClick: () =>
         borderRadius: 'var(--radius)', cursor: 'pointer', fontFamily: 'var(--font-body)',
         transition: 'all .2s'
       }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function TabBtn({ active, onClick, color, children }: { active: boolean; onClick: () => void; color?: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+        padding: '8px 4px 10px', background: 'none', border: 'none', cursor: 'pointer',
+        color: active ? (color || 'var(--green)') : 'var(--text3)',
+        fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-body)', letterSpacing: 0.3,
+        transition: 'color .15s'
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function IconBtn({ onClick, title, hoverColor, children }: { onClick: () => void; title: string; hoverColor?: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        background: 'none', border: '1px solid var(--border)', color: 'var(--text3)',
+        padding: '6px 10px', borderRadius: 'var(--radius)', cursor: 'pointer',
+        fontFamily: 'var(--font-body)', transition: 'all .2s',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+        minWidth: 36, minHeight: 32
+      }}
+      onMouseEnter={e => { e.currentTarget.style.color = hoverColor || 'var(--green)'; }}
+      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text3)'; }}
     >
       {children}
     </button>
