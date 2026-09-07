@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Users, Target, Activity, Video } from 'lucide-react';
 import Logo from './Logo';
 import LoginScreen from './LoginScreen';
+import heroNarrador from '../assets/hero-narrador.png';
 
 const FEATURES = [
   {
@@ -43,6 +44,14 @@ export default function LandingPage() {
         }}>
           Tudo que você precisa pra narrar.
         </h1>
+        <img
+          src={heroNarrador}
+          alt="Narrador usando o Voz do Jogo em uma cabine de transmissão"
+          style={{
+            width: '100%', maxWidth: 800, borderRadius: 'var(--radius)',
+            margin: '0 auto 28px', display: 'block', boxShadow: 'var(--shadow-card)'
+          }}
+        />
         <p style={{
           fontSize: 16, color: 'var(--text2)', maxWidth: 480,
           margin: '0 auto 32px', lineHeight: 1.6
