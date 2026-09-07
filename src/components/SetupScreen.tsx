@@ -124,20 +124,6 @@ export default function SetupScreen() {
     return dropTarget?.tk === tk && dropTarget?.type === type && dropTarget?.idx === idx;
   };
 
-  // Touch-friendly alternative to drag-and-drop -- native HTML5 drag events
-  // don't fire on mobile browsers, so reordering there needs plain buttons.
-  const moveInList = (tk: 'teamA' | 'teamB', type: 'starters' | 'reserves' | 'unlisted', idx: number, dir: -1 | 1) => {
-    setMatch(m => {
-      const team = { ...m[tk] };
-      const list = [...team[type]];
-      const target = idx + dir;
-      if (target < 0 || target >= list.length) return m;
-      [list[idx], list[target]] = [list[target], list[idx]];
-      team[type] = list;
-      return { ...m, [tk]: team };
-    });
-  };
-
   const updateField = (field: string, value: string) => {
     setMatch(m => ({ ...m, [field]: value }));
   };
@@ -503,9 +489,11 @@ export default function SetupScreen() {
                   {/* Titulares - live style with number badges */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <Label>Titulares (11)</Label>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text3)' }}>
-                      <GripVertical size={10} /> {isMobile ? 'toque nas setas para reordenar' : 'arraste para reordenar'}
-                    </span>
+                    {!isMobile && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9, color: 'var(--text3)' }}>
+                        <GripVertical size={10} /> arraste para reordenar
+                      </span>
+                    )}
                   </div>
                   {team.starters.map((p, i) => (
                     <div
@@ -523,10 +511,7 @@ export default function SetupScreen() {
                         background: isDropTarget(tk, 'starters', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                       }}
                     >
-                      {isMobile ? (
-                        <ReorderArrows onUp={() => moveInList(tk, 'starters', i, -1)} onDown={() => moveInList(tk, 'starters', i, 1)}
-                          disableUp={i === 0} disableDown={i === team.starters.length - 1} />
-                      ) : (
+                      {!isMobile && (
                         <span style={{ display: 'flex', color: 'var(--text3)', cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}><GripVertical size={12} /></span>
                       )}
                       <Input
@@ -574,10 +559,7 @@ export default function SetupScreen() {
                           background: isDropTarget(tk, 'reserves', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                         }}
                       >
-                        {isMobile ? (
-                          <ReorderArrows onUp={() => moveInList(tk, 'reserves', i, -1)} onDown={() => moveInList(tk, 'reserves', i, 1)}
-                            disableUp={i === 0} disableDown={i === team.reserves.length - 1} />
-                        ) : (
+                        {!isMobile && (
                           <span style={{ display: 'flex', color: 'var(--text3)', cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}><GripVertical size={12} /></span>
                         )}
                         <Input
@@ -625,10 +607,7 @@ export default function SetupScreen() {
                           background: isDropTarget(tk, 'unlisted', i) ? 'rgba(0,122,67,0.08)' : 'transparent'
                         }}
                       >
-                        {isMobile ? (
-                          <ReorderArrows onUp={() => moveInList(tk, 'unlisted', i, -1)} onDown={() => moveInList(tk, 'unlisted', i, 1)}
-                            disableUp={i === 0} disableDown={i === (team.unlisted || []).length - 1} />
-                        ) : (
+                        {!isMobile && (
                           <span style={{ display: 'flex', color: 'var(--text3)', cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}><GripVertical size={12} /></span>
                         )}
                         <Input
@@ -685,22 +664,6 @@ export default function SetupScreen() {
           onClose={() => setPickerTeam(null)}
         />
       )}
-    </div>
-  );
-}
-
-function ReorderArrows({ onUp, onDown, disableUp, disableDown }: {
-  onUp: () => void; onDown: () => void; disableUp?: boolean; disableDown?: boolean;
-}) {
-  const btnStyle = (disabled?: boolean): React.CSSProperties => ({
-    width: 26, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'var(--bg3)', border: 'none', borderRadius: 4, cursor: disabled ? 'default' : 'pointer',
-    color: disabled ? 'var(--text3)' : 'var(--text2)', opacity: disabled ? 0.4 : 1
-  });
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
-      <button onClick={onUp} disabled={disableUp} style={btnStyle(disableUp)}><ChevronUp size={13} /></button>
-      <button onClick={onDown} disabled={disableDown} style={btnStyle(disableDown)}><ChevronDown size={13} /></button>
     </div>
   );
 }

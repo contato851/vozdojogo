@@ -370,8 +370,9 @@ export default function LiveScreen() {
             </div>
           </div>
         )}
-        {/* Share button */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 10 }}>
+        {/* Share button + fullscreen -- desktop only, not useful/worth the
+            space on a phone screen */}
+        {!isMobile && <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 10 }}>
           {isDemo ? (
             <span
               title="Compartilhamento ao vivo disponível na versão completa"
@@ -433,7 +434,7 @@ export default function LiveScreen() {
           >
             {isFullscreen ? <><Minimize size={13} /> Sair da Tela Cheia</> : <><Maximize size={13} /> Tela Cheia</>}
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* Match info block */}
@@ -471,6 +472,8 @@ export default function LiveScreen() {
       <div style={{ textAlign: 'center', marginBottom: 10, fontSize: 10, color: 'var(--text3)', lineHeight: 1.6 }}>
         {liveView === 'field' ? (
           'Visualização tática · Eventos e substituições na vista Lista'
+        ) : isMobile ? (
+          'Para substituir, clique no nome do jogador.'
         ) : (
           <>
             <Square size={9} fill="var(--yellow-card)" stroke="none" style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}
