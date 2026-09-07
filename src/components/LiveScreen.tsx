@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play, Pause, RotateCcw, Loader2, Check, Link, RadioTower, X,
   Square, List, Target, ChevronsUpDown, ArrowLeftRight, ArrowUp,
-  ArrowDown, ArrowRight, RefreshCw, NotebookPen, Maximize, Minimize,
+  ArrowDown, ArrowRight, RefreshCw, NotebookPen, Maximize, Minimize, Undo2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LiveTeam, Player, LiveState } from '../data/types';
@@ -45,6 +45,8 @@ export default function LiveScreen() {
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const undoStackRef = useRef<LiveState[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
 
   const ls = liveState;
 
@@ -118,6 +120,22 @@ export default function LiveScreen() {
   const tA = ls.teamA;
   const tB = ls.teamB;
 
+  // Right-click to remove a goal doesn't exist on touch -- mobile gets a
+  // generic "undo last action" button instead, covering cards/goals/subs.
+  const pushUndo = () => {
+    undoStackRef.current.push(ls);
+    if (undoStackRef.current.length > 20) undoStackRef.current.shift();
+    setCanUndo(true);
+  };
+
+  const undo = () => {
+    const last = undoStackRef.current.pop();
+    if (last) {
+      setLiveState(last);
+      setCanUndo(undoStackRef.current.length > 0);
+    }
+  };
+
   const toggleClock = () => {
     setLiveState(prev => {
       if (!prev) return prev;
@@ -140,6 +158,7 @@ export default function LiveScreen() {
   };
 
   const addYellow = (tk: 'teamA' | 'teamB', idx: number) => {
+    pushUndo();
     setLiveState(prev => {
       if (!prev) return prev;
       const team = { ...prev[tk], starters: [...prev[tk].starters] };
@@ -151,6 +170,7 @@ export default function LiveScreen() {
   };
 
   const toggleRed = (tk: 'teamA' | 'teamB', idx: number) => {
+    pushUndo();
     setLiveState(prev => {
       if (!prev) return prev;
       const team = { ...prev[tk], starters: [...prev[tk].starters] };
@@ -162,6 +182,7 @@ export default function LiveScreen() {
   };
 
   const addGoal = (tk: 'teamA' | 'teamB', idx: number) => {
+    pushUndo();
     setLiveState(prev => {
       if (!prev) return prev;
       const team = { ...prev[tk], starters: [...prev[tk].starters] };
@@ -175,6 +196,8 @@ export default function LiveScreen() {
   };
 
   const removeGoal = (tk: 'teamA' | 'teamB', idx: number) => {
+    if ((ls[tk].starters[idx].goals || 0) <= 0) return;
+    pushUndo();
     setLiveState(prev => {
       if (!prev) return prev;
       const team = { ...prev[tk], starters: [...prev[tk].starters] };
@@ -204,6 +227,7 @@ export default function LiveScreen() {
   };
 
   const doSub = (tk: 'teamA' | 'teamB', si: number, ri: number) => {
+    pushUndo();
     setLiveState(prev => {
       if (!prev) return prev;
       const team = { ...prev[tk], starters: [...prev[tk].starters], reserves: [...prev[tk].reserves], subsOut: [...prev[tk].subsOut] };
@@ -435,6 +459,24 @@ export default function LiveScreen() {
             {isFullscreen ? <><Minimize size={13} /> Sair da Tela Cheia</> : <><Maximize size={13} /> Tela Cheia</>}
           </button>
         </div>}
+
+        {/* Mobile has no right-click, so goal removal (and any other
+            event) is undone via this instead */}
+        {isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+            <button onClick={undo} disabled={!canUndo} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 11, padding: '6px 16px', borderRadius: 'var(--radius)',
+              cursor: canUndo ? 'pointer' : 'default',
+              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: 0.5,
+              border: '1px solid var(--border2)', background: 'var(--bg3)',
+              color: canUndo ? 'var(--text2)' : 'var(--text3)',
+              opacity: canUndo ? 1 : 0.5, transition: 'all .2s'
+            }}>
+              <Undo2 size={13} /> Desfazer
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Match info block */}
