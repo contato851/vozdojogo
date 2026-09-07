@@ -382,7 +382,7 @@ export default function SetupScreen() {
               className="btn-green"
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 16, letterSpacing: 2 }}
             >
-              <Play size={15} fill="currentColor" /> {hasLive ? 'AJUSTAR TRANSMISSÃO' : 'INICIAR TRANSMISSÃO'}
+              <Play size={15} fill="currentColor" /> NARRAR
             </button>
             {hasLive && <button onClick={resetLive} className="btn-red" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', fontSize: 13 }}><RefreshCw size={13} /> Reiniciar</button>}
           </div>
