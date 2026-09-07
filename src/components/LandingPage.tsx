@@ -33,14 +33,14 @@ export default function LandingPage() {
   return (
     <div>
       {/* === HERO === */}
-      <div style={{ padding: '64px 20px 56px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+      <div style={{ padding: '80px clamp(20px, 6vw, 80px) 64px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
           <Logo size="lg" />
         </div>
         <h1 style={{
-          fontFamily: 'var(--font-head)', fontSize: 40, fontWeight: 700,
+          fontFamily: 'var(--font-head)', fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700,
           color: 'var(--text)', letterSpacing: 1, lineHeight: 1.15,
-          maxWidth: 640, margin: '0 auto 16px'
+          maxWidth: 900, margin: '0 auto 20px'
         }}>
           Tudo que você precisa pra narrar.
         </h1>
@@ -48,13 +48,13 @@ export default function LandingPage() {
           src={heroNarrador}
           alt="Narrador usando o Voz do Jogo em uma cabine de transmissão"
           style={{
-            width: '100%', maxWidth: 800, borderRadius: 'var(--radius)',
-            margin: '0 auto 28px', display: 'block', boxShadow: 'var(--shadow-card)'
+            width: '100%', maxWidth: 1000, borderRadius: 'var(--radius)',
+            margin: '0 auto 32px', display: 'block', boxShadow: 'var(--shadow-card)'
           }}
         />
         <p style={{
-          fontSize: 16, color: 'var(--text2)', maxWidth: 480,
-          margin: '0 auto 32px', lineHeight: 1.6
+          fontSize: 18, color: 'var(--text2)', maxWidth: 640,
+          margin: '0 auto 36px', lineHeight: 1.6
         }}>
           Escalação, substituições, cartões, gols e cronômetro — numa tela só.
           Feito por narradores, pra narradores.
@@ -98,8 +98,8 @@ export default function LandingPage() {
         </div>
 
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16, maxWidth: 900, margin: '56px auto 0', textAlign: 'left'
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: 20, maxWidth: 1100, margin: '64px auto 0', textAlign: 'left'
         }}>
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} style={{
@@ -127,15 +127,15 @@ export default function LandingPage() {
       </div>
 
       {/* === VÍDEO === */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '56px 20px', textAlign: 'center' }}>
+      <div style={{ borderTop: '1px solid var(--border)', padding: '64px clamp(20px, 6vw, 80px)', textAlign: 'center' }}>
         <div style={{
-          fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700,
-          color: 'var(--text)', letterSpacing: 0.5, marginBottom: 24
+          fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 700,
+          color: 'var(--text)', letterSpacing: 0.5, marginBottom: 28
         }}>
           Veja como funciona
         </div>
         <div style={{
-          maxWidth: 720, margin: '0 auto', aspectRatio: '16 / 9',
+          maxWidth: 960, margin: '0 auto', aspectRatio: '16 / 9',
           background: 'var(--bg2)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 10
