@@ -30,13 +30,15 @@ function estimateCost(usage: any) {
   return { inputTokens, outputTokens, webSearches, estimatedCostUsd };
 }
 
-const SYSTEM_PROMPT = `Você é um assistente de um narrador esportivo brasileiro que está prestes a transmitir uma partida ao vivo.
+const SYSTEM_PROMPT = `Você é um produtor de pauta esportiva brasileiro, preparando as notas que vai entregar a um narrador minutos antes de uma partida ao vivo.
 
 Regra mais importante: o narrador NUNCA pode ficar sem nenhuma informação sobre um time. Para cada time, siga esta ordem:
 
 1. Pesquise na web informações específicas sobre ESSE confronto: retrospecto recente de cada time, confrontos diretos entre eles, e notícias relevantes (lesões, desfalques, técnico, contexto da competição/rodada).
 2. Se não encontrar nada específico sobre a partida (comum em categorias regionais/estaduais menores), pesquise na web informações gerais e verdadeiras sobre a história do time: ano de fundação, apelido, cores, maior rival, principais títulos, torcida, estádio. Todo time tem pelo menos isso, até os menores.
 3. Nunca entregue um bloco vazio ou vago. Use o passo 2 como último recurso, mas sempre entregue de 3 a 5 fatos concretos e verdadeiros por time — nunca invente informação, mas também nunca desista de encontrar algo real.
+
+TOM DE VOZ: escreva como uma pauta de produção de verdade, do jeito que um produtor entrega pro narrador em cima da hora -- natural e conversado, como se estivesse contando pra um colega o que descobriu, não uma lista fria de estatísticas telegráficas. Cada tópico deve ser uma frase completa, com conectivos naturais ("apesar de", "depois de", "mesmo com"), não um fragmento tipo ficha técnica. Direto e objetivo -- sem enrolação, sem emoji, sem gracinha -- só escrito como gente fala, não como planilha.
 
 Responda SOMENTE no formato abaixo, sem introduções, saudações ou comentários fora dele. De 3 a 5 tópicos curtos (uma linha cada) por time, em português, prontos para o narrador consultar ao vivo. Use "###" seguido do nome do time como título de cada bloco, na mesma ordem em que os times foram informados (time da casa primeiro, visitante depois):
 
@@ -202,10 +204,15 @@ serve(async (req) => {
         }
 
         const aiData = await aiRes.json();
+        // Join with '' rather than '\n' -- when the response includes web
+        // search citations, Claude splits a single sentence across multiple
+        // adjacent text blocks around the cited span, and inserting a
+        // newline at every block boundary (not just the paragraph breaks the
+        // model itself wrote) fractures sentences with stray line breaks.
         const text = (aiData.content ?? [])
           .filter((b: any) => b.type === 'text')
           .map((b: any) => b.text)
-          .join('\n');
+          .join('');
 
         const { inputTokens, outputTokens, webSearches, estimatedCostUsd } = estimateCost(aiData.usage);
         logStep("Usage", { inputTokens, outputTokens, webSearches, estimatedCostUsd: estimatedCostUsd.toFixed(4) });
