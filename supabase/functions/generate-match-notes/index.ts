@@ -8,28 +8,104 @@ const corsHeaders = {
 
 const DAILY_LIMIT = 2;
 const GROQ_MODEL = "openai/gpt-oss-120b";
+const WIKI_UA = "VozDoJogoApp/1.0 (https://vozdojogo.app.br)";
 
 const logStep = (step: string, details?: any) => {
   const d = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[GENERATE-MATCH-NOTES] ${step}${d}`);
 };
 
+// Same disambiguation table used for club crests (useTeamLogo.ts) -- a plain
+// Wikipedia search for a generic name like "Grêmio" or "Colo-Colo" can match
+// a different, more famous club with the same name.
+const WIKI_OVERRIDES: Record<string, string> = {
+  'FLAMENGO': 'Clube de Regatas do Flamengo',
+  'VASCO': 'Club de Regatas Vasco da Gama',
+  'BOTAFOGO': 'Botafogo de Futebol e Regatas',
+  'FLUMINENSE': 'Fluminense Football Club',
+  'PALMEIRAS': 'Sociedade Esportiva Palmeiras',
+  'CORINTHIANS': 'Sport Club Corinthians Paulista',
+  'SÃO PAULO': 'São Paulo Futebol Clube',
+  'SANTOS': 'Santos Futebol Clube',
+  'GRÊMIO': 'Grêmio Foot-Ball Porto Alegrense',
+  'INTERNACIONAL': 'Sport Club Internacional',
+  'CRUZEIRO': 'Cruzeiro Esporte Clube',
+  'ATLÉTICO-MG': 'Clube Atlético Mineiro',
+  'BAHIA': 'Esporte Clube Bahia',
+  'VITÓRIA': 'Esporte Clube Vitória',
+  'SPORT': 'Sport Club do Recife',
+  'NÁUTICO': 'Clube Náutico Capibaribe',
+  'SANTA CRUZ': 'Santa Cruz Futebol Clube',
+  'CEARÁ': 'Ceará Sporting Club',
+  'FORTALEZA': 'Fortaleza Esporte Clube',
+  'CORITIBA': 'Coritiba Foot Ball Club',
+  'ATHLETICO-PR': 'Club Athletico Paranaense',
+  'PARANÁ': 'Paraná Clube',
+  'GOIÁS': 'Goiás Esporte Clube',
+  'ATLÉTICO-GO': 'Atlético Clube Goianiense',
+  'VILA NOVA': 'Vila Nova Futebol Clube',
+  'PONTE PRETA': 'Associação Atlética Ponte Preta',
+  'GUARANI': 'Guarani Futebol Clube',
+  'BRAGANTINO': 'Red Bull Bragantino',
+  'AVAÍ': 'Avaí Futebol Clube',
+  'FIGUEIRENSE': 'Figueirense Futebol Clube',
+  'CHAPECOENSE': 'Associação Chapecoense de Futebol',
+  'CRICIÚMA': 'Criciúma Esporte Clube',
+  'JOINVILLE': 'Joinville Esporte Clube',
+  'JUVENTUDE': 'Esporte Clube Juventude',
+  'CUIABÁ': 'Cuiabá Esporte Clube',
+  'AMÉRICA-MG': 'América Futebol Clube (Belo Horizonte)',
+  'TOMBENSE': 'Tombense Futebol Clube',
+  'REMO': 'Clube do Remo',
+  'PAYSANDU': 'Paysandu Sport Club',
+  'ABC': 'ABC Futebol Clube',
+  'AMÉRICA-RN': 'América Futebol Clube (Natal)',
+  'CSA': 'Centro Sportivo Alagoano',
+  'CRB': 'Clube de Regatas Brasil',
+  'SAMPAIO CORRÊA': 'Sampaio Corrêa Futebol Clube',
+  'ITUANO': 'Ituano Futebol Clube',
+  'MIRASSOL': 'Mirassol Futebol Clube',
+  'NOVORIZONTINO': 'Grêmio Novorizontino',
+  'BOTAFOGO-SP': 'Botafogo Futebol Clube (Ribeirão Preto)',
+  'PORTUGUESA': 'Associação Portuguesa de Desportos',
+  'BRASILIENSE': 'Brasiliense Futebol Clube',
+  'GAMA': 'Sociedade Esportiva do Gama',
+  'CONFIANÇA': 'Associação Desportiva Confiança',
+  'SERGIPE': 'Club Sportivo Sergipe',
+  'LONDRINA': 'Londrina Esporte Clube',
+  'MARINGÁ': 'Maringá Futebol Clube',
+  'OPERÁRIO-PR': 'Operário Ferroviário Esporte Clube',
+  'SÃO BERNARDO': 'São Bernardo Futebol Clube',
+  'ÁGUA SANTA': 'Esporte Clube Água Santa',
+  'FERROVIÁRIA': 'Associação Ferroviária de Esportes',
+  'XV DE PIRACICABA': 'Esporte Clube XV de Novembro (Piracicaba)',
+  'INTER DE LIMEIRA': 'Associação Atlética Internacional (Limeira)',
+  'ATHLETIC CLUB': 'Athletic Club (Minas Gerais)',
+};
+
 const SYSTEM_PROMPT = `Você é um produtor de pauta esportiva brasileiro, preparando as notas que vai entregar a um narrador minutos antes de uma partida ao vivo.
 
-Você vai receber três blocos de resultados de busca na web:
-1. Um bloco sobre O CONFRONTO ESPECÍFICO entre os dois times (esse jogo em particular, ou histórico recente entre eles).
-2. Um bloco geral sobre o time da casa.
-3. Um bloco geral sobre o time visitante.
+Você vai receber quatro blocos de material:
+1. CONFRONTO ESPECÍFICO: resultados de busca sobre esse jogo em particular (retrospecto recente, desfalques, escalação, contexto da rodada, retrospecto direto entre os dois times).
+2 e 3. CURIOSIDADE GENUÍNA (Wikipédia) sobre cada time: texto corrido com história, rivalidades, apelidos, momentos marcantes -- ótima fonte pra dar cor e contexto.
+4. Um bloco geral de busca na web sobre cada time (fallback caso os outros dois não tenham nada aproveitável).
 
-PRIORIDADE MÁXIMA: para cada time, use primeiro o bloco do CONFRONTO ESPECÍFICO -- extraia dele o máximo de fatos possível sobre aquele time (resultado, desfalques, escalação, contexto da rodada, retrospecto direto contra o adversário). Só recorra ao bloco geral daquele time se o bloco do confronto não tiver nada aproveitável sobre ele, ou pra completar quando o confronto trouxer poucos fatos.
+PRIORIDADE MÁXIMA, NESTA ORDEM: para cada time, comece SEMPRE pelo bloco do CONFRONTO ESPECÍFICO -- é a informação mais importante e mais atual, sobre esse jogo em particular, e deve vir primeiro sempre que existir. Use a CURIOSIDADE GENUÍNA (Wikipédia) para complementar e dar cor -- rivalidade, apelido, recorde, momento marcante -- mas nunca no lugar de uma informação real e atual sobre o confronto quando ela existir. Só recorra ao bloco geral de busca se os dois anteriores não tiverem nada aproveitável sobre aquele time.
+
+SEJA BREVE em cada tópico -- uma frase direta, sem listar escalação completa jogador por jogador (isso consome espaço demais). Resuma desfalques em no máximo um ou dois nomes.
+
+O QUE É UMA BOA CURIOSIDADE (para complementar o confronto): a origem de um apelido, uma rivalidade histórica, um recorde marcante, um momento icônico ou emocionante da história do clube, um retrospecto direto interessante contra o adversário, um contexto de rodada que muda o clima do jogo (briga por título, fuga do rebaixamento, jejum acabando).
+O QUE EVITAR como conteúdo principal (só use como último recurso, se nada mais existir): estatística fria de temporada sem contexto narrativo ("posse de bola média de 54%", "12 jogos sem sofrer gol") -- isso é informação de placar, não curiosidade, e deixa o texto com cara de planilha.
 
 ATENÇÃO A NOMES DUPLICADOS: muitos clubes brasileiros pequenos/regionais compartilham nome com clubes famosos de outros estados ou países (ex: existe um "Colo-Colo" na Bahia E um "Colo-Colo" gigante no Chile; existe "Palmeiras" em várias cidades pequenas além do paulista; "Nacional", "União", "Ferroviário", "Independente" também se repetem). Antes de usar qualquer fato de um resultado de busca, confira se ele bate com o CONTEXTO informado (competição, estado/cidade, país) -- a competição e os nomes dos dois times informados no início da mensagem são a fonte da verdade sobre qual time é esse. Se um resultado descrever um clube diferente (outro estado, outro país, outra categoria) que só coincide no nome, IGNORE esse resultado por completo -- não use nenhum fato dele, nem mencione títulos/estádios/história que pertençam ao clube errado.
 
 Regra mais importante: o narrador NUNCA pode ficar sem nenhuma informação sobre um time. Se, depois de descartar resultados do clube errado, nenhum bloco trouxer nada útil e confiável (comum em categorias regionais/estaduais menores), diga apenas o que for genérico e seguro sobre um clube desse porte/região (ex: disputa a categoria X do estado Y) em vez de inventar títulos ou fatos específicos. Nunca invente informação, mas também nunca desista de encontrar algo real -- nunca entregue um bloco vazio.
 
-TOM DE VOZ: escreva como uma pauta de produção de verdade, do jeito que um produtor entrega pro narrador em cima da hora -- natural e fluido, como se estivesse explicando o jogo pra um colega, não uma lista fria de estatísticas telegráficas. Cada tópico deve ser uma frase completa, com conectivos naturais ("chega embalado depois de...", "não perde há...", "a torcida aposta que...", "o técnico deve mandar a campo..."). Continua direto e objetivo -- sem enrolação, sem emoji, sem gracinha -- só escrito como gente fala, não como planilha.
+TOM DE VOZ: escreva como uma pauta de produção de verdade, do jeito que um produtor entrega pro narrador em cima da hora -- natural e fluido, como se estivesse contando uma história pra um colega, não uma lista fria de estatísticas telegráficas. Cada tópico deve ser uma frase completa, com conectivos naturais. Direto e objetivo -- sem enrolação, sem emoji, sem gracinha -- só escrito como gente fala, não como planilha.
 
-Responda SOMENTE no formato abaixo, sem introduções, saudações ou comentários fora dele. De 3 a 5 tópicos por time, em português, prontos para o narrador consultar ao vivo. Use "###" seguido do nome do time como título de cada bloco, na mesma ordem em que os times foram informados (time da casa primeiro, visitante depois):
+No máximo 3 tópicos curtos por time.
+
+Responda SOMENTE no formato abaixo, sem introduções, saudações ou comentários fora dele. Use "###" seguido do nome do time como título de cada bloco, na mesma ordem em que os times foram informados (time da casa primeiro, visitante depois):
 
 ### <nome do time da casa>
 - tópico
@@ -62,9 +138,13 @@ async function tavilySearch(apiKey: string, query: string) {
     },
     body: JSON.stringify({
       query,
-      max_results: 5,
-      search_depth: "basic",
+      max_results: 3,
+      search_depth: "advanced",
       include_answer: true,
+      chunks_per_source: 1,
+      include_domains: ["ge.globo.com", "globoesporte.globo.com", "espn.com.br", "placar.abril.com.br", "lance.com.br", "uol.com.br", "terra.com.br", "trivela.com.br"],
+      include_domains_mode: "boost",
+      exclude_domains: ["sofascore.com", "fbref.com", "flashscore.com", "transfermarkt.com.br", "transfermarkt.com", "whoscored.com", "livescore.com"],
     }),
   });
   if (!res.ok) {
@@ -82,6 +162,39 @@ function formatSearchResults(label: string, data: any): string {
   }
   if ((data.results ?? []).length === 0 && !data.answer) lines.push('(nenhum resultado encontrado)');
   return lines.join('\n');
+}
+
+// Dedicated "genuine curiosity" source, distinct from the match-stats search
+// above -- Wikipedia's prose (founding story, nickname origin, rivalries) is
+// exactly the color a narrator wants, which generic web search mostly won't
+// surface on its own.
+async function wikipediaCuriosity(team: string): Promise<string> {
+  try {
+    const override = WIKI_OVERRIDES[team.toUpperCase()];
+    let title: string;
+    if (override) {
+      title = override;
+    } else {
+      const searchUrl = `https://pt.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(team + ' futebol clube')}&limit=1`;
+      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': WIKI_UA } });
+      if (!searchRes.ok) return '(Wikipédia indisponível)';
+      const searchData = await searchRes.json();
+      const page = searchData.pages?.[0];
+      if (!page) return '(nenhum artigo encontrado na Wikipédia)';
+      title = page.key;
+    }
+    const extractUrl = `https://pt.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+    const extractRes = await fetch(extractUrl, { headers: { 'User-Agent': WIKI_UA } });
+    if (!extractRes.ok) return '(Wikipédia indisponível)';
+    const extractData = await extractRes.json();
+    const pages = extractData.query?.pages;
+    const first = pages ? Object.values(pages)[0] as any : null;
+    const extract = first?.extract as string | undefined;
+    if (!extract) return '(sem texto disponível)';
+    return extract.slice(0, 700);
+  } catch {
+    return '(erro ao buscar Wikipédia)';
+  }
 }
 
 serve(async (req) => {
@@ -138,14 +251,16 @@ serve(async (req) => {
 
     const ctx = competition ? ` ${competition}` : '';
     const queryMatch = `${teamA} x ${teamB}${ctx} ${round || ''} ${matchDate || ''} resultado notícias retrospecto escalação desfalques confronto direto`;
-    const queryTeamA = `${teamA}${ctx} história fundação títulos apelido rival torcida estádio`;
-    const queryTeamB = `${teamB}${ctx} história fundação títulos apelido rival torcida estádio`;
+    const queryTeamA = `${teamA}${ctx} curiosidades história rivalidade recorde momento marcante`;
+    const queryTeamB = `${teamB}${ctx} curiosidades história rivalidade recorde momento marcante`;
 
-    logStep("Searching Tavily", { teamA, teamB });
-    const [searchMatch, searchTeamA, searchTeamB] = await Promise.all([
+    logStep("Searching Tavily + Wikipedia", { teamA, teamB });
+    const [searchMatch, searchTeamA, searchTeamB, wikiA, wikiB] = await Promise.all([
       tavilySearch(tavilyKey, queryMatch),
       tavilySearch(tavilyKey, queryTeamA),
       tavilySearch(tavilyKey, queryTeamB),
+      wikipediaCuriosity(teamA),
+      wikipediaCuriosity(teamB),
     ]);
 
     const userMessage = [
@@ -157,9 +272,13 @@ serve(async (req) => {
       '',
       formatSearchResults(`confronto ${teamA} x ${teamB}`, searchMatch),
       '',
-      formatSearchResults(`geral sobre ${teamA}`, searchTeamA),
+      `Curiosidade genuína (Wikipédia) sobre ${teamA}:\n${wikiA}`,
       '',
-      formatSearchResults(`geral sobre ${teamB}`, searchTeamB),
+      `Curiosidade genuína (Wikipédia) sobre ${teamB}:\n${wikiB}`,
+      '',
+      formatSearchResults(`geral (fallback) sobre ${teamA}`, searchTeamA),
+      '',
+      formatSearchResults(`geral (fallback) sobre ${teamB}`, searchTeamB),
     ].join('\n');
 
     logStep("Calling Groq", { teamA, teamB, model: GROQ_MODEL });
@@ -171,7 +290,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        max_tokens: 1200,
+        max_tokens: 1500,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMessage },
