@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DAILY_LIMIT = 2;
+const DAILY_LIMIT = 1;
 
 // Sonnet 5 pricing: $2/1M input tokens, $10/1M output tokens.
 // Web search: $10 per 1,000 searches, billed separately from tokens.
@@ -109,7 +109,7 @@ serve(async (req) => {
 
     if ((count ?? 0) >= DAILY_LIMIT) {
       logStep("Daily limit reached", { count });
-      return new Response(JSON.stringify({ error: "Limite diário de gerações atingido. Tente novamente amanhã." }), {
+      return new Response(JSON.stringify({ error: "Você já usou sua geração de IA hoje. A geração é renovada diariamente — tente de novo amanhã." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

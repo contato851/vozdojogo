@@ -111,6 +111,9 @@ export default function NotesScreen() {
           <span style={{ fontSize: 9, color: 'var(--text3)' }}>
             {match.aiNotesGenerated ? 'Uma geração por partida — edite os textos livremente abaixo.' : 'Pesquisa o confronto na web e preenche os dois times de uma vez.'}
           </span>
+          <span style={{ fontSize: 9, color: 'var(--text3)' }}>
+            A geração por IA é renovada diariamente (1 por dia).
+          </span>
           {match.aiNotesGenerated && (
             <span style={{ fontSize: 9, color: 'var(--text2)' }}>
               Gerado por IA — confira as informações antes de usar ao vivo.

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const DAILY_LIMIT = 2;
+const DAILY_LIMIT = 1;
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const WIKI_UA = "VozDoJogoApp/1.0 (https://vozdojogo.app.br)";
 
@@ -279,7 +279,7 @@ serve(async (req) => {
 
     if ((count ?? 0) >= DAILY_LIMIT) {
       logStep("Daily limit reached", { count });
-      return new Response(JSON.stringify({ error: "Limite diário de gerações atingido. Tente novamente amanhã." }), {
+      return new Response(JSON.stringify({ error: "Você já usou sua geração de IA hoje. A geração é renovada diariamente — tente de novo amanhã." }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
