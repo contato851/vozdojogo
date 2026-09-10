@@ -79,8 +79,15 @@ serve(async (req) => {
     { auth: { persistSession: false } }
   );
 
+  // Fast checks (auth, daily limit, request body) run before we open the
+  // streamed response below -- any failure here is a normal, non-streamed
+  // error response with a real HTTP status.
+  let anthropicKey: string;
+  let user: { id: string };
+  let teamA: string, teamB: string, competition: string | undefined, round: string | undefined, matchDate: string | undefined;
+
   try {
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    anthropicKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
     if (!anthropicKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
     const authHeader = req.headers.get("Authorization");
@@ -88,8 +95,8 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user) throw new Error("User not authenticated");
+    if (!userData.user) throw new Error("User not authenticated");
+    user = userData.user;
     logStep("User authenticated", { id: user.id });
 
     // Count generations by calendar day in Brazil time (UTC-3, no DST since
@@ -115,72 +122,13 @@ serve(async (req) => {
       });
     }
 
-    const { teamA, teamB, competition, round, matchDate } = await req.json();
+    const body = await req.json();
+    teamA = body.teamA;
+    teamB = body.teamB;
+    competition = body.competition;
+    round = body.round;
+    matchDate = body.matchDate;
     if (!teamA || !teamB) throw new Error("teamA e teamB são obrigatórios");
-
-    const userMessage = [
-      `Time da casa: ${teamA}`,
-      `Time visitante: ${teamB}`,
-      `Competição: ${competition || 'não informado'}`,
-      `Rodada: ${round || 'não informado'}`,
-      `Data: ${matchDate || 'não informado'}`,
-    ].join('\n');
-
-    logStep("Calling Anthropic", { teamA, teamB });
-    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 1200,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
-        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 4 }],
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const errBody = await aiRes.text();
-      logStep("Anthropic API error", { status: aiRes.status, body: errBody });
-      throw new Error(`Erro na API da Anthropic (${aiRes.status})`);
-    }
-
-    const aiData = await aiRes.json();
-    const text = (aiData.content ?? [])
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
-      .join('\n');
-
-    const { inputTokens, outputTokens, webSearches, estimatedCostUsd } = estimateCost(aiData.usage);
-    logStep("Usage", { inputTokens, outputTokens, webSearches, estimatedCostUsd: estimatedCostUsd.toFixed(4) });
-
-    const sections = splitSections(text);
-    if (!sections) {
-      logStep("Failed to parse AI response", { text });
-      // Still log the spend -- this call was billed even though parsing
-      // failed -- but don't count it against the user's daily allowance.
-      await supabase.from("ai_generation_log").insert({
-        user_id: user.id, success: false,
-        input_tokens: inputTokens, output_tokens: outputTokens,
-        web_searches: webSearches, estimated_cost_usd: estimatedCostUsd,
-      });
-      throw new Error("Não foi possível interpretar a resposta da IA. Tente novamente.");
-    }
-
-    await supabase.from("ai_generation_log").insert({
-      user_id: user.id, success: true,
-      input_tokens: inputTokens, output_tokens: outputTokens,
-      web_searches: webSearches, estimated_cost_usd: estimatedCostUsd,
-    });
-    logStep("Success");
-
-    return new Response(JSON.stringify(sections), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: msg });
@@ -189,4 +137,112 @@ serve(async (req) => {
       status: 500,
     });
   }
+
+  // From here on, letting Claude search freely (no domain restriction, no
+  // fixed number of searches) can legitimately take well over a minute.
+  // Supabase's edge functions kill a connection that goes 150s without any
+  // bytes written back to the caller ("request idle timeout"), regardless of
+  // the project's plan -- separate from the plan's total wall-clock budget
+  // (400s on Pro, which comfortably covers this). So instead of returning a
+  // single buffered response, we open a streamed one immediately and trickle
+  // a heartbeat byte every few seconds while Claude works, then write the
+  // real JSON as the final chunk. A leading run of whitespace bytes is still
+  // valid JSON as far as JSON.parse is concerned, so the client-side
+  // `supabase.functions.invoke` parsing needs no changes.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const heartbeat = setInterval(() => {
+        try { controller.enqueue(encoder.encode(" ")); } catch { /* stream already closed */ }
+      }, 10_000);
+
+      const finish = (payload: unknown) => {
+        clearInterval(heartbeat);
+        try {
+          controller.enqueue(encoder.encode(JSON.stringify(payload)));
+          controller.close();
+        } catch { /* client disconnected */ }
+      };
+
+      try {
+        const userMessage = [
+          `Time da casa: ${teamA}`,
+          `Time visitante: ${teamB}`,
+          `Competição: ${competition || 'não informado'}`,
+          `Rodada: ${round || 'não informado'}`,
+          `Data: ${matchDate || 'não informado'}`,
+        ].join('\n');
+
+        logStep("Calling Anthropic", { teamA, teamB });
+        const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": anthropicKey,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-5",
+            max_tokens: 4000,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: "user", content: userMessage }],
+            // web_search_20250305 (the original, simpler variant, as opposed
+            // to the newer dynamic-filtering _20260209 type) with max_uses
+            // capped at 1 -- matches the exact architecture that was fast and
+            // worked well before, plus the 1-search cap so latency stays
+            // reasonable for a narrator waiting right before going live.
+            tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 1 }],
+          }),
+        });
+
+        if (!aiRes.ok) {
+          const errBody = await aiRes.text();
+          logStep("Anthropic API error", { status: aiRes.status, body: errBody });
+          throw new Error(`Erro na API da Anthropic (${aiRes.status})`);
+        }
+
+        const aiData = await aiRes.json();
+        const text = (aiData.content ?? [])
+          .filter((b: any) => b.type === 'text')
+          .map((b: any) => b.text)
+          .join('\n');
+
+        const { inputTokens, outputTokens, webSearches, estimatedCostUsd } = estimateCost(aiData.usage);
+        logStep("Usage", { inputTokens, outputTokens, webSearches, estimatedCostUsd: estimatedCostUsd.toFixed(4) });
+
+        const sections = splitSections(text);
+        if (!sections) {
+          logStep("Failed to parse AI response", { text });
+          // Still log the spend -- this call was billed even though parsing
+          // failed -- but don't count it against the user's daily allowance.
+          await supabase.from("ai_generation_log").insert({
+            user_id: user.id, success: false,
+            input_tokens: inputTokens, output_tokens: outputTokens,
+            web_searches: webSearches, estimated_cost_usd: estimatedCostUsd,
+          });
+          throw new Error("Não foi possível interpretar a resposta da IA. Tente novamente.");
+        }
+
+        await supabase.from("ai_generation_log").insert({
+          user_id: user.id, success: true,
+          input_tokens: inputTokens, output_tokens: outputTokens,
+          web_searches: webSearches, estimated_cost_usd: estimatedCostUsd,
+        });
+        logStep("Success");
+
+        finish(sections);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        logStep("ERROR", { message: msg });
+        // The 200 + streamed headers are already committed at this point, so
+        // an error here has to travel as an in-band `{ error }` payload --
+        // the frontend already checks `data?.error` for exactly this reason.
+        finish({ error: msg });
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 });
