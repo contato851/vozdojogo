@@ -94,6 +94,8 @@ PRIORIDADE MÁXIMA, NESTA ORDEM: para cada time, comece SEMPRE pelo bloco do CON
 
 SEJA BREVE em cada tópico -- uma frase direta, sem listar escalação completa jogador por jogador (isso consome espaço demais). Resuma desfalques em no máximo um ou dois nomes.
 
+NUNCA INVENTE PLACAR OU RESULTADO -- ISSO É O PIOR ERRO POSSÍVEL AQUI: você só pode afirmar que um time venceu, perdeu ou empatou -- e citar qualquer placar -- se isso estiver escrito literalmente no "Resumo" ou nos resultados de busca do bloco CONFRONTO ESPECÍFICO. Se o resumo disser algo como "informação não disponível" ou "not available", ou se nenhum resultado de busca trouxer um placar confirmado para ESSA partida específica, é PROIBIDO inventar um resultado -- mesmo que pareça plausível. Nesse caso, fale sobre a expectativa para o jogo, a posição de cada time na tabela, ou o retrospecto histórico geral entre os dois (sem números de placar inventados) em vez de dizer quem venceu.
+
 O QUE É UMA BOA CURIOSIDADE (para complementar o confronto): a origem de um apelido, uma rivalidade histórica, um recorde marcante, um momento icônico ou emocionante da história do clube, um retrospecto direto interessante contra o adversário, um contexto de rodada que muda o clima do jogo (briga por título, fuga do rebaixamento, jejum acabando).
 O QUE EVITAR como conteúdo principal (só use como último recurso, se nada mais existir): estatística fria de temporada sem contexto narrativo ("posse de bola média de 54%", "12 jogos sem sofrer gol") -- isso é informação de placar, não curiosidade, e deixa o texto com cara de planilha.
 
@@ -114,6 +116,43 @@ Responda SOMENTE no formato abaixo, sem introduções, saudações ou comentári
 ### <nome do time visitante>
 - tópico
 - tópico`;
+
+// The model repeatedly fabricates a scoreline for the specific match even
+// when explicitly told the search found no confirmed result (tested live:
+// it invented the same "2 a 0" score twice in a row despite Tavily's own
+// summary saying "not available" right next to it in the prompt) -- prompt
+// wording alone isn't reliable enough here, so this is a deterministic code
+// backstop. If nothing in the raw search content looks like an actual score
+// for this matchup, any line in the model's output that both looks like a
+// score and uses a result word gets dropped rather than risk reading a
+// made-up result out loud, live.
+const UNAVAILABLE_RE = /not available|n[ãa]o (est[áa] |)dispon[íi]vel|no information|not found|sem informa[çc][õo]es/i;
+const SCORE_RE = /\b\d{1,2}\s*(?:a|x|X|×|-|–)\s*\d{1,2}\b/;
+const RESULT_WORD_RE = /(venceu|derrota(?:do)?|perdeu|goleou|empatou|vit[óo]ria|triunfo|bateu)/i;
+// Also catches invented head-to-head streak claims ("10 jogos invicto"),
+// which the model fabricates with the same confidence as a scoreline when
+// no real retrospecto was found -- same failure mode, different shape.
+const STREAK_NUM_RE = /\b\d{1,3}\s*(jogos?|confrontos?|partidas?|rodadas?|anos?)\b/i;
+const STREAK_WORD_RE = /(invic|invenc|sequ[êe]ncia|s[ée]rie de|jejum)/i;
+
+function hasConfirmedScore(searchData: any): boolean {
+  const answer = String(searchData?.answer ?? '');
+  if (UNAVAILABLE_RE.test(answer)) return false;
+  const haystack = [answer, ...(searchData?.results ?? []).map((r: any) => `${r.title} ${r.content}`)].join(' ');
+  return SCORE_RE.test(haystack);
+}
+
+function stripUnconfirmedScoreLines(text: string, confirmed: boolean): string {
+  if (confirmed) return text;
+  return text
+    .split('\n')
+    .filter(line => {
+      const isScoreClaim = SCORE_RE.test(line) && RESULT_WORD_RE.test(line);
+      const isStreakClaim = STREAK_NUM_RE.test(line) && STREAK_WORD_RE.test(line);
+      return !isScoreClaim && !isStreakClaim;
+    })
+    .join('\n');
+}
 
 function splitSections(text: string): { teamA: string; teamB: string } | null {
   const headings = [...text.matchAll(/^###[ \t]*.*$/gm)];
@@ -263,6 +302,8 @@ serve(async (req) => {
       wikipediaCuriosity(teamB),
     ]);
 
+    const matchScoreConfirmed = hasConfirmedScore(searchMatch);
+
     const userMessage = [
       `Time da casa: ${teamA}`,
       `Time visitante: ${teamB}`,
@@ -271,6 +312,10 @@ serve(async (req) => {
       `Data: ${matchDate || 'não informado'}`,
       '',
       formatSearchResults(`confronto ${teamA} x ${teamB}`, searchMatch),
+      ...(matchScoreConfirmed ? [] : [
+        '',
+        '🚫 AVISO DO SISTEMA: a busca acima NÃO confirmou nenhum placar, resultado ou sequência de jogos (invencibilidade/jejum) real para esse confronto específico. NÃO mencione nenhum número desse tipo para esse jogo -- nem placar, nem "X jogos invicto/sem perder". Fale só sobre expectativa, contexto de tabela, ou use a curiosidade da Wikipédia abaixo.',
+      ]),
       '',
       `Curiosidade genuína (Wikipédia) sobre ${teamA}:\n${wikiA}`,
       '',
@@ -305,11 +350,17 @@ serve(async (req) => {
     }
 
     const groqData = await groqRes.json();
-    const text = groqData.choices?.[0]?.message?.content ?? '';
+    let text = groqData.choices?.[0]?.message?.content ?? '';
     const usage = groqData.usage ?? {};
     const inputTokens = usage.prompt_tokens ?? 0;
     const outputTokens = usage.completion_tokens ?? 0;
     logStep("Usage", { inputTokens, outputTokens });
+
+    if (!matchScoreConfirmed) {
+      const before = text;
+      text = stripUnconfirmedScoreLines(text, false);
+      if (text !== before) logStep("Stripped unconfirmed score/streak claim from AI output", { teamA, teamB });
+    }
 
     const sections = splitSections(text);
     if (!sections) {
