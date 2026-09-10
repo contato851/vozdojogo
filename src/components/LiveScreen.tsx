@@ -7,7 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { LiveTeam, Player, LiveState } from '../data/types';
 import { FORMATIONS } from '../data/formations';
-import { formatClock, getClockElapsed, getClockMinute, sortByNumber } from '../data/store';
+import { formatClock, getClockElapsed, getClockMinute, sortStartersByNumber } from '../data/store';
 import { useTeamLogo } from '../hooks/useTeamLogo';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
@@ -238,7 +238,7 @@ export default function LiveScreen() {
       if ((out.yellowCards || 0) > 0) ev += ` 🟨×${out.yellowCards}`;
       if (out.redCard) ev += ' 🟥';
       team.starters[si] = { ...res, subIn: true, yellowCards: 0, redCard: false, goals: 0 };
-      if (prev.sortOrder !== 'manual') team.starters = sortByNumber(team.starters);
+      if (prev.sortOrder !== 'manual') team.starters = sortStartersByNumber(team.starters);
       team.reserves.splice(ri, 1);
       team.subsOut.push({ ...out, replacedBy: `${res.number} ${res.name}`, eventSummary: ev } as any);
       return { ...prev, [tk]: team };
@@ -702,12 +702,21 @@ function LiveTeamCard({ team, tk, openDropdown, setOpenDropdown, addYellow, togg
               transition: 'background .15s', userSelect: 'none', position: 'relative',
               background: isOpen ? 'rgba(0,122,67,0.08)' : p.subIn ? 'rgba(0,122,67,0.05)' : 'transparent'
             }}>
-              <span style={{
-                width: 32, height: 32, borderRadius: 'var(--radius)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontWeight: 700,
-                fontSize: 15, fontFamily: 'var(--font-head)', marginRight: 10,
-                flexShrink: 0, letterSpacing: 1, background: 'var(--bg3)', color: 'var(--text)'
-              }}>{p.number}</span>
+              <span style={{ position: 'relative', marginRight: 10, flexShrink: 0 }}>
+                <span style={{
+                  width: 32, height: 32, borderRadius: 'var(--radius)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', fontWeight: 700,
+                  fontSize: 15, fontFamily: 'var(--font-head)',
+                  letterSpacing: 1, background: 'var(--bg3)', color: 'var(--text)'
+                }}>{p.number}</span>
+                {idx === 0 && (
+                  <span title="Goleiro" style={{
+                    position: 'absolute', top: -5, left: -3, fontSize: 8, fontWeight: 700,
+                    color: 'var(--text3)', background: 'var(--bg2)', padding: '0 3px',
+                    borderRadius: 3, lineHeight: 1.4, pointerEvents: 'none'
+                  }}>G</span>
+                )}
+              </span>
               <span
                 onClick={e => { e.stopPropagation(); if (hasR) setOpenDropdown(isOpen ? null : did); }}
                 style={{

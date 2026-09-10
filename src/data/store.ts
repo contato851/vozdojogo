@@ -15,6 +15,17 @@ export function sortByNumber(arr: Player[]): Player[] {
   return [...arr].sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999));
 }
 
+// The first starter slot is always the goalkeeper (marked with a "G" in the
+// UI) and must stay pinned there regardless of jersey number -- otherwise a
+// keeper substitution (e.g. #1 out, #12 in) gets sorted away from the top
+// under numeric order, and whichever outfield player has the lowest number
+// visually takes the "goalkeeper" slot instead.
+export function sortStartersByNumber(arr: Player[]): Player[] {
+  if (arr.length === 0) return arr;
+  const [goalkeeper, ...rest] = arr;
+  return [goalkeeper, ...sortByNumber(rest)];
+}
+
 export function newMatchData(): Match {
   return {
     id: genId(),

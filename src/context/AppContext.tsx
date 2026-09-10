@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Match, LiveState, SavedLive, Player } from '../data/types';
 import {
   genId, newMatchData, saveMatches as saveMatchesToLS, loadMatches, saveLive as saveLiveToLS,
-  loadLive, clearLive as clearLiveLS, sortByNumber, initPlayerEvents, getClockElapsed, getClockMinute
+  loadLive, clearLive as clearLiveLS, sortByNumber, sortStartersByNumber, initPlayerEvents, getClockElapsed, getClockMinute
 } from '../data/store';
 
 interface AppContextType {
@@ -137,7 +137,7 @@ export function AppProvider({ children, basePath = '' }: { children: React.React
     const doSort = match.sortOrder !== 'manual';
     const prep = (arr: Player[]) => {
       const filtered = initPlayerEvents(arr.filter(p => p.name.trim()));
-      return doSort ? sortByNumber(filtered) : filtered;
+      return doSort ? sortStartersByNumber(filtered) : filtered;
     };
     const newLive: LiveState = {
       sortOrder: match.sortOrder || 'number',

@@ -524,21 +524,30 @@ export default function SetupScreen() {
                       {!isMobile && (
                         <span style={{ display: 'flex', color: 'var(--text3)', cursor: 'move', userSelect: 'none', width: 12, flexShrink: 0 }}><GripVertical size={12} /></span>
                       )}
-                      <Input
-                        value={p.number}
-                        onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
-                        style={{
-                          width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
-                          fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14,
-                          background: 'var(--bg3)', color: 'var(--text)',
-                          borderRadius: 'var(--radius)', border: 'none'
-                        }}
-                      />
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <Input
+                          value={p.number}
+                          onChange={v => updatePlayer(tk, 'starters', i, 'number', v)}
+                          style={{
+                            width: 42, textAlign: 'center', flexShrink: 0, padding: '6px 4px',
+                            fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14,
+                            background: 'var(--bg3)', color: 'var(--text)',
+                            borderRadius: 'var(--radius)', border: 'none'
+                          }}
+                        />
+                        {i === 0 && (
+                          <span title="Goleiro" style={{
+                            position: 'absolute', top: -5, left: -3, fontSize: 8, fontWeight: 700,
+                            color: 'var(--text3)', background: 'var(--bg2)', padding: '0 3px',
+                            borderRadius: 3, lineHeight: 1.4, pointerEvents: 'none'
+                          }}>G</span>
+                        )}
+                      </div>
                       <Input
                         value={p.name}
                         onChange={v => updatePlayer(tk, 'starters', i, 'name', v)}
                         onBlur={v => updatePlayer(tk, 'starters', i, 'name', v.toUpperCase())}
-                        placeholder={`Titular ${i + 1}`}
+                        placeholder={i === 0 ? 'Titular 1 (goleiro)' : `Titular ${i + 1}`}
                         style={{ flex: 1, padding: '6px 10px', fontSize: 12, fontWeight: 600 }}
                       />
                     </div>
