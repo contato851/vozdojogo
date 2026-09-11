@@ -135,7 +135,7 @@ export default function SettingsScreen() {
           }}>
             ASSINATURA E COBRANÇA
           </h3>
-          <InfoRow label="Plano" value="VOZ DO JOGO — R$ 29,90/mês" />
+          <InfoRow label="Plano" value="VOZ DO JOGO — R$ 39,90/mês" />
           <InfoRow label="Status" value={statusInfo.text} valueColor={statusInfo.color} />
           <InfoRow label="Próxima cobrança" value={formatDate(subscriptionEnd)} last />
         </div>
@@ -188,7 +188,7 @@ export default function SettingsScreen() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
               }}
             >
-              {checkoutLoading ? 'ABRINDO...' : <><CreditCard size={15} /> ASSINAR POR R$ 29,90/MÊS</>}
+              {checkoutLoading ? 'ABRINDO...' : <><CreditCard size={15} /> ASSINAR POR R$ 39,90/MÊS</>}
             </button>
           )}
 

@@ -51,7 +51,7 @@ export default function PaywallScreen() {
               opacity: loading ? 0.5 : 1
             }}
           >
-            {loading ? 'CARREGANDO...' : 'ASSINAR POR R$ 29,90/MÊS'}
+            {loading ? 'CARREGANDO...' : 'ASSINAR POR R$ 39,90/MÊS'}
           </button>
 
           <button

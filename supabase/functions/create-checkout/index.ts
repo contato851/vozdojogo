@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PLAN_AMOUNT = 29.90;
+const PLAN_AMOUNT = 39.90;
 
 const logStep = (step: string, details?: any) => {
   const d = details ? ` - ${JSON.stringify(details)}` : '';
